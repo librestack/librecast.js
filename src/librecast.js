@@ -76,12 +76,12 @@ Librecast.prototype.close = function() {
 }
 
 Librecast.prototype.wsClose = function(e) {
-	console.log("websocket close");
+	console.log("websocket close: (" + e.code + ") " + e.reason);
 	console.log("websocket.readyState: " + this.websocket.readyState);
 }
 
 Librecast.prototype.wsError = function(e) {
-	console.log("websocket error") + e;
+	console.log("websocket error") + e.message;
 	console.log("websocket.readyState: " + this.websocket.readyState);
 }
 
