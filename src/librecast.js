@@ -20,6 +20,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+"use strict";
+
 const WS_CONNECTING = 0;
 const WS_OPEN = 1;
 const WS_CLOSING = 2;
@@ -29,12 +31,79 @@ const LC_ERROR_SUCCESS = 0;
 const LC_ERROR_FAILURE = 1;
 const LC_ERROR_WEBSOCKET_UNSUPPORTED = 2;
 const LC_ERROR_WEBSOCKET_NOTREADY = 3;
+const LC_ERROR_CALLBACK_NOT_FUNCTION = 4;
+
+const LCAST_OP_NOOP             = 0x01;
+const LCAST_OP_SETOPT           = 0x02;
+const LCAST_OP_SOCKET_NEW       = 0x03;
+const LCAST_OP_SOCKET_SETOPT    = 0x04;
+const LCAST_OP_SOCKET_LISTEN    = 0x05;
+const LCAST_OP_SOCKET_IGNORE    = 0x06;
+const LCAST_OP_SOCKET_CLOSE     = 0x07;
+const LCAST_OP_SOCKET_MSG       = 0x08;
+const LCAST_OP_CHANNEL_NEW      = 0x09;
+const LCAST_OP_CHANNEL_SETOPT   = 0x0a;
+const LCAST_OP_CHANNEL_BIND     = 0x0b;
+const LCAST_OP_CHANNEL_UNBIND   = 0x0c;
+const LCAST_OP_CHANNEL_JOIN     = 0x0d;
+const LCAST_OP_CHANNEL_PART     = 0x0e;
+const LCAST_OP_CHANNEL_SEND     = 0x0f;
+
+const LCAST_HEADER_LENGTH = 17;
 
 var librecastErrorMsg = {};
 librecastErrorMsg[LC_ERROR_SUCCESS] = "Success";
 librecastErrorMsg[LC_ERROR_FAILURE] = "Failure";
 librecastErrorMsg[LC_ERROR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
 librecastErrorMsg[LC_ERROR_WEBSOCKET_NOTREADY] = "Websocket not ready";
+librecastErrorMsg[LC_ERROR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+
+var tok = 42;
+var lcastCallbacks = {};
+var HAS_JQUERY = (typeof jQuery !== "undefined");
+
+
+/* return deferred if jQuery available */
+function defer() {
+	if (HAS_JQUERY) {
+		console.log("jQuery available, returning deferred");
+		try {
+			return $.Deferred();
+		}
+		catch(e) {
+			console.log("unable to set deferred");
+		}
+	}
+}
+
+function LibrecastCallback(obj, opcode, callback, temp) {
+	this.obj = obj;
+	this.opcode = opcode;
+	this.token = tok++;
+	this.temp = temp; /* delete this callback when done */
+	lcastCallbacks[this.token] = this;
+	if (typeof(callback) === 'function') {
+		this.callback = callback;
+	}
+}
+
+LibrecastCallback.prototype.call = function () {
+
+	if (typeof lcastCallbacks[this.token] === 'undefined') {
+		console.log("callback " + this.token + " undefined. Skipping.");
+		return false;
+	}
+	console.log("callback " + this.token + " triggered");
+	if (typeof(this.callback) === 'function') {
+		var args = [].slice.call(arguments);
+		args.unshift(this);
+		this.callback.apply(this, args);
+	}
+	if (this.temp) {
+		console.log("Deleting callback token " + this.token);
+		delete lcastCallbacks[this.token];
+	}
+}
 
 
 function LibrecastException(errorCode) {
@@ -44,7 +113,7 @@ function LibrecastException(errorCode) {
 }
 
 
-function Librecast(url) {
+function Librecast(url, onready) {
 	console.log("Librecast constructor");
 
 	/* check for websocket browser support */
@@ -53,21 +122,26 @@ function Librecast(url) {
 	}
     else {
 		console.log("websockets unsupported");
-		throw LibrecastException(LC_ERROR_WEBSOCKET_UNSUPPORTED);
+		throw new LibrecastException(LC_ERROR_WEBSOCKET_UNSUPPORTED);
 	}
-    this.url = url
+
+    var self = this;
+    this.id = undefined;
+    this.url = url;
 
 	/* user callback functions */
 	this.onmessage = null;
-	this.onready = null;
+	this.onready = onready;
 
 	/* prepare websocket */
 	this.websocket = new WebSocket(url, "librecast");
-    var self = this;
+	this.websocket.binaryType = 'arraybuffer';
 	this.websocket.onclose = function(e) { self.wsClose(e); }
 	this.websocket.onerror = function(e) { self.wsError(e); }
 	this.websocket.onmessage = function(e) { self.wsMessage(e); }
 	this.websocket.onopen = function(e) { self.wsOpen(e); }
+
+	this.defer = defer();
 }
 
 Librecast.prototype.close = function() {
@@ -86,40 +160,164 @@ Librecast.prototype.wsError = function(e) {
 }
 
 Librecast.prototype.wsMessage = function(msg) {
-	console.log("websocket message received");
-	this.onmessage(msg); /* callback */
+	console.log("websocket message received (type=" + msg.type +")");
+	if (typeof(msg) === 'object') {
+		if (msg.data instanceof ArrayBuffer) {
+			var dataview = new DataView(msg.data);
+			var opcode = dataview.getUint8(0);
+			var len = dataview.getUint32(1);
+			var id = dataview.getUint32(5);
+			var id2 = dataview.getUint32(9);
+			var token = dataview.getUint32(13);
+			console.log("opcode: " + opcode);
+			console.log("len: " + len);
+			console.log("id: " + id);
+			console.log("id2: " + id2);
+			console.log("token: " + token);
+			if (len > 0) {
+				var sv = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH, len);
+				var msg = sv.toString();
+			}
+			var cb = lcastCallbacks[token];
+			if (cb)
+				cb.call(opcode, len, id, token, msg);
+			else
+				console.log("message with no matching callback token '" + token + "'");
+		}
+	}
+	else if (typeof(this.onmessage) === 'function') {
+		//this.onmessage(msg); /* callback */
+		console.log(msg);
+	}
+	return defer();
 }
 
 Librecast.prototype.wsOpen = function(e) {
 	console.log("websocket open");
 	console.log("websocket.readyState: " + this.websocket.readyState);
-	this.onready(); /* callback */
+	if (this.defer) {
+		console.log("resolving Librecast.defer");
+		this.defer.resolve();
+	}
+	if (typeof(this.onready) === 'function') {
+		this.onready(); /* callback */
+	}
+}
+
+Librecast.prototype.send = function(obj, opcode, callback, data, len) {
+	if (typeof len === 'undefined') { len = 0; }
+	var id = obj.id;
+	var id2 = obj.id2;
+	if (typeof obj.id === 'undefined') { id = 0; }
+	if (typeof obj.id2 === 'undefined') { id2 = 0;}
+	var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len);
+	var dataview = new DataView(buffer);
+	var cb = new LibrecastCallback(obj, opcode, callback);
+
+	dataview.setUint8(0, opcode);
+	dataview.setUint32(1, len);
+	dataview.setUint32(5, id);
+	dataview.setUint32(9, id2);
+	dataview.setUint32(13, cb.token);
+	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
+	if (typeof data !== 'undefined') {
+		var sv = new StringView(data, "UTF-16");
+		sv.forEachChar(function (charCode, charOff, rawOff, rawData) {
+				dataview.setUint8(LCAST_HEADER_LENGTH + charOff, charCode);
+		});
+	}
+	this.websocket.send(buffer);
 }
 
 
-function Channel(lctx, name) {
+function Channel(lctx, name, onready) {
 	console.log("Channel constructor");
 	this.lctx = lctx;
+	this.id = undefined;
 	this.ws = lctx.websocket;
 	this.name = name;
+	var cb = new LibrecastCallback(this, null, onready);
+	this.onready = cb;
+	lctx.send(this, LCAST_OP_CHANNEL_NEW, this.ready, name, name.length);
+
+	this.defer = defer();
+}
+
+Channel.prototype.bind = function(sock, callback) {
+	console.log("binding channel " + this.name + " to socket " + sock.id);
+	this.id = this.id;
+	this.id2 = sock.id;
+	this.lctx.send(this, LCAST_OP_CHANNEL_BIND, callback);
+}
+
+Channel.prototype.bound = function() {
+	console.log('bound channel');
 }
 
 Channel.prototype.join = function() {
 	console.log('joining channel "' + this.name + '"');
-	this.ws.send("/join " + this.name);
+	this.lctx.send(this, LCAST_OP_CHANNEL_JOIN, this.joined);
+}
+
+Channel.prototype.joined = function() {
+	console.log('joined channel "' + this.name + '"');
 }
 
 Channel.prototype.part = function() {
-	console.log('leaving channel "' + this.name + '"');
-	this.ws.send("/part " + this.name);
+	console.log('parting channel "' + this.name + '"');
+	this.lctx.send(this, LCAST_OP_CHANNEL_PART, this.parted);
+}
+
+Channel.prototype.part = function() {
+	console.log('parted channel "' + this.name + '"');
+}
+
+Channel.prototype.ready = function(cb, opcode, len, id) {
+	console.log("callback with opcode " + cb.opcode + " and token " + cb.token);
+	console.log("setting channel id to " + id);
+
+	var self = cb.obj;
+	self.id = id;
+	if (self.defer) {
+		console.log("resolving Channel.defer");
+		self.defer.resolve();
+	}
+	self.onready.call();
 }
 
 Channel.prototype.send = function(msg) {
 	if (this.lctx.websocket.readyState == WS_OPEN) {
-		console.log('sending on channel "' + this.name + '"');
-		this.ws.send(msg);
+		console.log('sending on channel "' + this.name + '": ' + msg);
+		this.lctx.send(this, LCAST_OP_CHANNEL_SEND, null, msg, msg.length);
 	}
 	else {
 		throw new LibrecastException(LC_ERROR_WEBSOCKET_NOTREADY);
 	}
+}
+
+function Socket(lctx, onready) {
+	console.log("Socket constructor");
+	this.lctx = lctx;
+	this.id = undefined;
+	var cb = new LibrecastCallback(this, null, onready, true);
+	this.onready = cb;
+	this.onmessage = undefined;
+	lctx.send(this, LCAST_OP_SOCKET_NEW, this.ready);
+	this.defer = defer();
+}
+
+Socket.prototype.listen = function (callback) {
+	this.lctx.send(this, LCAST_OP_SOCKET_LISTEN, callback);
+}
+
+Socket.prototype.ready = function (cb, opcode, len, id) {
+	console.log("Socket.ready()");
+
+	var self = cb.obj;
+	self.id = id;
+	if (self.defer) {
+		console.log("resolving Socket.defer");
+		self.defer.resolve();
+	}
+	self.onready.call();
 }
