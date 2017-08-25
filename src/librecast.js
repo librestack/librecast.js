@@ -230,18 +230,14 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len) {
 	idx = LCAST_HEADER_LENGTH;
 	for (i = 0; i < len; i++) {
 		c = data.charCodeAt(i);
-		console.log(c);
 		if (c <= 0x7f) {
-			console.log("1 byte of UTF-16");
 			dataview.setUint8(idx++, c);
 		}
 		else if (c <= 0x7ff) {
-			console.log("2 bytes of UTF-16");
 			dataview.setUint8(idx++, 0xc0 | (c >>> 6));
 			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
 		}
 		else if (c <= 0xffff) {
-			console.log("3 bytes of UTF-16");
 			dataview.setUint8(idx++, 0xe0 | (c >>> 12));
 			dataview.setUint8(idx++, 0x80 | ((c >>> 6) & 0x3f));
 			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
