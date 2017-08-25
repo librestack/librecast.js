@@ -219,22 +219,47 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len) {
 	var id2 = obj.id2;
 	if (typeof obj.id === 'undefined') { id = 0; }
 	if (typeof obj.id2 === 'undefined') { id2 = 0;}
-	var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len);
+	var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len * 4);
 	var dataview = new DataView(buffer);
 	var cb = new LibrecastCallback(obj, opcode, callback);
 
+	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
+
+	/* convert UTF-16 to UTF-8 */
+	var c, i, idx;
+	idx = LCAST_HEADER_LENGTH;
+	for (i = 0; i < len; i++) {
+		c = data.charCodeAt(i);
+		console.log(c);
+		if (c <= 0x7f) {
+			console.log("1 byte of UTF-16");
+			dataview.setUint8(idx++, c);
+		}
+		else if (c <= 0x7ff) {
+			console.log("2 bytes of UTF-16");
+			dataview.setUint8(idx++, 0xc0 | (c >>> 6));
+			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
+		}
+		else if (c <= 0xffff) {
+			console.log("3 bytes of UTF-16");
+			dataview.setUint8(idx++, 0xe0 | (c >>> 12));
+			dataview.setUint8(idx++, 0x80 | ((c >>> 6) & 0x3f));
+			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
+		}
+		else {
+			console.log("UTF-16 surrogate pair, ignoring");
+			/* TODO: 4 byte UTF-8 encoding, just in case anyone speaks Vogon */
+		}
+	}
+
+	/* write headers */
 	dataview.setUint8(0, opcode);
-	dataview.setUint32(1, len);
+	dataview.setUint32(1, idx - LCAST_HEADER_LENGTH);
 	dataview.setUint32(5, id);
 	dataview.setUint32(9, id2);
 	dataview.setUint32(13, cb.token);
-	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
-	if (typeof data !== 'undefined') {
-		var sv = new StringView(data, "UTF-16");
-		sv.forEachChar(function (charCode, charOff, rawOff, rawData) {
-				dataview.setUint8(LCAST_HEADER_LENGTH + charOff, charCode);
-		});
-	}
+
+	/* send */
 	this.websocket.send(buffer);
 }
 
