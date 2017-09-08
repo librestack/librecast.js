@@ -319,6 +319,13 @@ LibrecastChannel.prototype.ready = function(cb, opcode, len, id) {
 	self.onready.call();
 }
 
+LibrecastChannel.prototype.getval = function(key, cb) {
+	console.log("channel getval '" + key + "'");
+
+	/* set up callback, and send request */
+	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length);
+}
+
 LibrecastChannel.prototype.send = function(msg) {
 	if (this.lctx.websocket.readyState == WS_OPEN) {
 		console.log('sending on channel "' + this.name + '": ' + msg);
