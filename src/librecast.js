@@ -302,7 +302,7 @@ LibrecastChannel.prototype.part = function() {
 	this.lctx.send(this, LCAST_OP_CHANNEL_PART, this.parted);
 }
 
-LibrecastChannel.prototype.part = function() {
+LibrecastChannel.prototype.parted = function() {
 	console.log('parted channel "' + this.name + '"');
 }
 
