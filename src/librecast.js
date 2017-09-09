@@ -217,7 +217,7 @@ Librecast.prototype.wsOpen = function(e) {
 	}
 }
 
-Librecast.prototype.send = function(obj, opcode, callback, data, len) {
+Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 	if (typeof len === 'undefined') { len = 0; }
 	var id = obj.id;
 	var id2 = obj.id2;
@@ -225,7 +225,7 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len) {
 	if (typeof obj.id2 === 'undefined') { id2 = 0;}
 	var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len * 4);
 	var dataview = new DataView(buffer);
-	var cb = new LibrecastCallback(obj, opcode, callback);
+	var cb = new LibrecastCallback(obj, opcode, callback, temp);
 
 	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
 
@@ -323,7 +323,7 @@ LibrecastChannel.prototype.getval = function(key, cb) {
 	console.log("channel getval '" + key + "'");
 
 	/* set up callback, and send request */
-	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length);
+	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length, true);
 }
 
 LibrecastChannel.prototype.send = function(msg) {
