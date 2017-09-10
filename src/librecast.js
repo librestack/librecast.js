@@ -254,14 +254,24 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 	var id2 = obj.id2;
 	if (typeof obj.id === 'undefined') { id = 0; }
 	if (typeof obj.id2 === 'undefined') { id2 = 0;}
-	var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len * 4);
-	var dataview = new DataView(buffer);
 	var cb = new LibrecastCallback(obj, opcode, callback, temp);
 
 	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
 
-	/* convert UTF-16 to UTF-8 */
-	var idx = convertUTF16toUTF8(LCAST_HEADER_LENGTH, data, len, dataview);
+	if (typeof data === 'object') {
+		/* copy ArrayBuffer into new buffer with space for header data */
+		var idx = LCAST_HEADER_LENGTH + len;
+		var tmp = new Uint8Array(idx);
+		tmp.set(new Uint8Array(data), LCAST_HEADER_LENGTH);
+		var buffer = tmp.buffer;
+		var dataview = new DataView(buffer);
+	}
+	else {
+		/* string data, convert to UTF-8 */
+		var buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len * 4);
+		var dataview = new DataView(buffer);
+		var idx = convertUTF16toUTF8(LCAST_HEADER_LENGTH, data, len, dataview);
+	}
 
 	/* write headers */
 	dataview.setUint8(0, opcode);
@@ -335,6 +345,24 @@ LibrecastChannel.prototype.getval = function(key, cb) {
 
 	/* set up callback, and send request */
 	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length, true);
+}
+
+LibrecastChannel.prototype.setval = function(key, val, cb) {
+	console.log("channel setval '" + key + "': '" + val + "'");
+
+	var klen = key.length;
+	var vlen = val.length;
+	var buflen = 4 + (klen + vlen) * 4; /* allow up to 4 bytes per character */
+	var buffer = new ArrayBuffer(buflen);
+	var dataview = new DataView(buffer);
+	var idx = 4;
+
+	/* pack data and send */
+	/* [keylen][key][val] */
+	dataview.setUint32(0, klen);
+	idx = convertUTF16toUTF8(idx, key, klen, dataview);
+	idx = convertUTF16toUTF8(idx, val, vlen, dataview);
+	this.lctx.send(this, LCAST_OP_CHANNEL_SETVAL, cb, buffer, buflen, true);
 }
 
 LibrecastChannel.prototype.send = function(msg) {
