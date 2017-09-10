@@ -75,7 +75,6 @@ var HAS_JQUERY = (typeof jQuery !== "undefined");
  * returns: index of last byte written in dataview */
 function convertUTF16toUTF8(idx, utf16in, len, dataview) {
 	var c, i;
-	idx = LCAST_HEADER_LENGTH;
 	for (i = 0; i < len; i++) {
 		c = utf16in.charCodeAt(i);
 		if (c <= 0x7f) {
