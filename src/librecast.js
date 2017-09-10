@@ -67,6 +67,38 @@ var lcastCallbacks = {};
 var HAS_JQUERY = (typeof jQuery !== "undefined");
 
 
+/* convert utf16 to utf8 and append to dataview
+ * idx:      starting byte in dataview to write to
+ * utf16in:  utf16 input
+ * len:      length (characters) of utf16in
+ * dataview: DataView array to write to
+ * returns: index of last byte written in dataview */
+function convertUTF16toUTF8(idx, utf16in, len, dataview) {
+	var c, i;
+	idx = LCAST_HEADER_LENGTH;
+	for (i = 0; i < len; i++) {
+		c = utf16in.charCodeAt(i);
+		if (c <= 0x7f) {
+			dataview.setUint8(idx++, c);
+		}
+		else if (c <= 0x7ff) {
+			dataview.setUint8(idx++, 0xc0 | (c >>> 6));
+			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
+		}
+		else if (c <= 0xffff) {
+			dataview.setUint8(idx++, 0xe0 | (c >>> 12));
+			dataview.setUint8(idx++, 0x80 | ((c >>> 6) & 0x3f));
+			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
+		}
+		else {
+			console.log("UTF-16 surrogate pair, ignoring");
+			/* TODO: 4 byte UTF-8 encoding, just in case anyone speaks Vogon */
+		}
+	}
+	return idx;
+}
+
+
 /* return deferred if jQuery available */
 function defer() {
 	if (HAS_JQUERY) {
@@ -230,27 +262,7 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 	console.log("sending message (" + opcode + ") with token '" + cb.token  + "'");
 
 	/* convert UTF-16 to UTF-8 */
-	var c, i, idx;
-	idx = LCAST_HEADER_LENGTH;
-	for (i = 0; i < len; i++) {
-		c = data.charCodeAt(i);
-		if (c <= 0x7f) {
-			dataview.setUint8(idx++, c);
-		}
-		else if (c <= 0x7ff) {
-			dataview.setUint8(idx++, 0xc0 | (c >>> 6));
-			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
-		}
-		else if (c <= 0xffff) {
-			dataview.setUint8(idx++, 0xe0 | (c >>> 12));
-			dataview.setUint8(idx++, 0x80 | ((c >>> 6) & 0x3f));
-			dataview.setUint8(idx++, 0x80 | (c & 0x3f));
-		}
-		else {
-			console.log("UTF-16 surrogate pair, ignoring");
-			/* TODO: 4 byte UTF-8 encoding, just in case anyone speaks Vogon */
-		}
-	}
+	var idx = convertUTF16toUTF8(LCAST_HEADER_LENGTH, data, len, dataview);
 
 	/* write headers */
 	dataview.setUint8(0, opcode);
