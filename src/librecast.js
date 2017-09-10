@@ -111,6 +111,23 @@ function defer() {
 	}
 }
 
+
+/* extend DataView to provide missing getUint64() */
+/* this function based on code from spice-html5
+ * https://github.com/SPICE/spice-html5/blob/master/spicedataview.js
+ * Copyright (C) 2013 by Jeremy P. White <jwhite@codeweavers.com>
+ * License: LGPL3+ */
+if (DataView.prototype.getUint64 === undefined) {
+	DataView.prototype.getUint64 = function (byteOffset, littleEndian) {
+		var lo = (littleEndian) ? 0 : 4;
+		var hi = (littleEndian) ? 4 : 0;
+
+		return (this.getUint32(byteOffset + hi, littleEndian) << 32) |
+			    this.getUint32(byteOffset + lo, littleEndian);
+	}
+}
+
+
 function LibrecastCallback(obj, opcode, callback, temp) {
 	this.obj = obj;
 	this.opcode = opcode;
@@ -219,12 +236,20 @@ Librecast.prototype.wsMessage = function(msg) {
 			console.log("id2: " + id2);
 			console.log("token: " + token);
 			if (len > 0) {
-				var sv = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH, len);
-				var msg = sv.toString();
+				if (opcode === LCAST_OP_CHANNEL_SETVAL) {
+					var keylen = dataview.getUint64(17);
+					var key = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8, keylen);
+					var val = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8 + keylen);
+				}
+				else {
+					var sv = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH, len);
+					var key = undefined;
+					var val = sv.toString();
+				}
 			}
 			var cb = lcastCallbacks[token];
 			if (cb)
-				cb.call(opcode, len, id, token, msg);
+				cb.call(opcode, len, id, token, key, val);
 			else
 				console.log("message with no matching callback token '" + token + "'");
 		}
