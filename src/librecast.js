@@ -168,7 +168,8 @@ function LibrecastException(errorCode) {
 function Librecast(onready) {
 	console.log("Librecast constructor");
 
-	this.url = "ws://" + document.location.host + "/";
+	this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
+	this.url += document.location.host + "/";
 
 	/* check for websocket browser support */
 	if (window.WebSocket) {
