@@ -334,9 +334,9 @@ LibrecastChannel.prototype.bound = function() {
 	console.log('bound channel');
 }
 
-LibrecastChannel.prototype.join = function() {
+LibrecastChannel.prototype.join = function(callback) {
 	console.log('joining channel "' + this.name + '"');
-	this.lctx.send(this, LCAST_OP_CHANNEL_JOIN, this.joined);
+	this.lctx.send(this, LCAST_OP_CHANNEL_JOIN, callback);
 }
 
 LibrecastChannel.prototype.joined = function() {
