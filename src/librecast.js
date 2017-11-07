@@ -43,15 +43,16 @@ const LCAST_OP_SOCKET_IGNORE    = 0x07;
 const LCAST_OP_SOCKET_CLOSE     = 0x08;
 const LCAST_OP_SOCKET_MSG       = 0x09;
 const LCAST_OP_CHANNEL_NEW      = 0x0a;
-const LCAST_OP_CHANNEL_GETOPT   = 0x0b;
-const LCAST_OP_CHANNEL_SETOPT   = 0x0c;
-const LCAST_OP_CHANNEL_GETVAL   = 0x0d;
-const LCAST_OP_CHANNEL_SETVAL   = 0x0e;
-const LCAST_OP_CHANNEL_BIND     = 0x0f;
-const LCAST_OP_CHANNEL_UNBIND   = 0x10;
-const LCAST_OP_CHANNEL_JOIN     = 0x11;
-const LCAST_OP_CHANNEL_PART     = 0x12;
-const LCAST_OP_CHANNEL_SEND     = 0x13;
+const LCAST_OP_CHANNEL_GETMSG   = 0x0b;
+const LCAST_OP_CHANNEL_GETOPT   = 0x0c;
+const LCAST_OP_CHANNEL_SETOPT   = 0x0d;
+const LCAST_OP_CHANNEL_GETVAL   = 0x0e;
+const LCAST_OP_CHANNEL_SETVAL   = 0x0f;
+const LCAST_OP_CHANNEL_BIND     = 0x10;
+const LCAST_OP_CHANNEL_UNBIND   = 0x11;
+const LCAST_OP_CHANNEL_JOIN     = 0x12;
+const LCAST_OP_CHANNEL_PART     = 0x13;
+const LCAST_OP_CHANNEL_SEND     = 0x14;
 
 const LCAST_HEADER_LENGTH = 17;
 
@@ -364,6 +365,16 @@ LibrecastChannel.prototype.ready = function(cb, opcode, len, id) {
 		self.defer.resolve();
 	}
 	self.onready.call();
+}
+
+LibrecastChannel.prototype.getmsg = function(cb) {
+	console.log("channel getmsgs");
+
+	/* TODO: filters (msgs since last received etc.) */
+
+	/* send query */
+	var key = "";
+	this.lctx.send(this, LCAST_OP_CHANNEL_GETMSG, cb, key, key.length);
 }
 
 LibrecastChannel.prototype.getval = function(key, cb) {
