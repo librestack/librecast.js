@@ -54,7 +54,7 @@ const LCAST_OP_CHANNEL_JOIN     = 0x12;
 const LCAST_OP_CHANNEL_PART     = 0x13;
 const LCAST_OP_CHANNEL_SEND     = 0x14;
 
-const LCAST_HEADER_LENGTH = 17;
+const LCAST_HEADER_LENGTH = 25;
 
 var librecastErrorMsg = {};
 librecastErrorMsg[LC_ERROR_SUCCESS] = "Success";
@@ -232,14 +232,17 @@ Librecast.prototype.wsMessage = function(msg) {
 			var id = dataview.getUint32(5);
 			var id2 = dataview.getUint32(9);
 			var token = dataview.getUint32(13);
+			var timestamp = dataview.getUint64(17) * 1000; /* s -> ms */
+
 			console.log("opcode: " + opcode);
 			console.log("len: " + len);
 			console.log("id: " + id);
 			console.log("id2: " + id2);
 			console.log("token: " + token);
+			console.log("timestamp: " + timestamp);
 			if (len > 0) {
 				if (opcode === LCAST_OP_CHANNEL_SETVAL) {
-					var keylen = dataview.getUint64(17);
+					var keylen = dataview.getUint64(LCAST_HEADER_LENGTH);
 					var key = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8, keylen);
 					var val = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8 + keylen);
 				}
@@ -251,7 +254,7 @@ Librecast.prototype.wsMessage = function(msg) {
 			}
 			var cb = lcastCallbacks[token];
 			if (cb)
-				cb.call(opcode, len, id, token, key, val);
+				cb.call(opcode, len, id, token, key, val, timestamp);
 			else
 				console.log("message with no matching callback token '" + token + "'");
 		}
