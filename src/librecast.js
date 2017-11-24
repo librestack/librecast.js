@@ -294,7 +294,7 @@ lc.Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 
 	if (typeof data === 'object') {
 		/* copy ArrayBuffer into new buffer with space for header data */
-		idx = HEADER_LENGTH + len;
+		idx = lc.HEADER_LENGTH + len;
 		var tmp = new Uint8Array(idx);
 		tmp.set(new Uint8Array(data), lc.HEADER_LENGTH);
 		buffer = tmp.buffer;
