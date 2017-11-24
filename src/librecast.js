@@ -169,7 +169,7 @@ function LibrecastException(errorCode) {
 }
 
 
-function Librecast(onready) {
+lc.Librecast = function(onready) {
 	console.log("Librecast constructor");
 
 	this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
@@ -194,9 +194,9 @@ function Librecast(onready) {
 	this.init();
 
 	this.defer = defer();
-}
+};
 
-Librecast.prototype.init = function() {
+lc.Librecast.prototype.init = function() {
 	console.log("Librecast.init()");
 	/* prepare websocket */
 	var self = this;
@@ -208,24 +208,24 @@ Librecast.prototype.init = function() {
 	this.websocket.onopen = function(e) { self.wsOpen(e); };
 };
 
-Librecast.prototype.close = function() {
+lc.Librecast.prototype.close = function() {
 	console.log("Librecast close()");
 	this.websocket.close();
 };
 
-Librecast.prototype.wsClose = function(e) {
+lc.Librecast.prototype.wsClose = function(e) {
 	console.log("websocket close: (" + e.code + ") " + e.reason);
 	console.log("websocket.readyState: " + this.websocket.readyState);
 	console.log("reinitializing websocket");
 	this.init();
 };
 
-Librecast.prototype.wsError = function(e) {
+lc.Librecast.prototype.wsError = function(e) {
 	console.log("websocket error" + e.message);
 	console.log("websocket.readyState: " + this.websocket.readyState);
 };
 
-Librecast.prototype.wsMessage = function(msg) {
+lc.Librecast.prototype.wsMessage = function(msg) {
 	console.log("websocket message received (type=" + msg.type +")");
 	var key, val;
 	if (typeof(msg) === 'object') {
@@ -269,7 +269,7 @@ Librecast.prototype.wsMessage = function(msg) {
 	return defer();
 };
 
-Librecast.prototype.wsOpen = function(e) {
+lc.Librecast.prototype.wsOpen = function(e) {
 	console.log("websocket open");
 	console.log("websocket.readyState: " + this.websocket.readyState);
 	if (this.defer) {
@@ -281,7 +281,7 @@ Librecast.prototype.wsOpen = function(e) {
 	}
 };
 
-Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
+lc.Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 	if (typeof len === 'undefined') { len = 0; }
 	var id = obj.id;
 	var id2 = obj.id2;
@@ -319,7 +319,7 @@ Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 };
 
 
-function LibrecastChannel(lctx, name, onready) {
+lc.LibrecastChannel = function(lctx, name, onready) {
 	console.log("Channel constructor");
 	this.lctx = lctx;
 	this.id = undefined;
@@ -330,38 +330,38 @@ function LibrecastChannel(lctx, name, onready) {
 	lctx.send(this, LCAST_OP_CHANNEL_NEW, this.ready, name, name.length);
 
 	this.defer = defer();
-}
+};
 
-LibrecastChannel.prototype.bind = function(sock, callback) {
+lc.LibrecastChannel.prototype.bind = function(sock, callback) {
 	console.log("binding channel " + this.name + " to socket " + sock.id);
 	this.id = this.id;
 	this.id2 = sock.id;
 	this.lctx.send(this, LCAST_OP_CHANNEL_BIND, callback);
 };
 
-LibrecastChannel.prototype.bound = function() {
+lc.LibrecastChannel.prototype.bound = function() {
 	console.log('bound channel');
 };
 
-LibrecastChannel.prototype.join = function(callback) {
+lc.LibrecastChannel.prototype.join = function(callback) {
 	console.log('joining channel "' + this.name + '"');
 	this.lctx.send(this, LCAST_OP_CHANNEL_JOIN, callback);
 };
 
-LibrecastChannel.prototype.joined = function() {
+lc.LibrecastChannel.prototype.joined = function() {
 	console.log('joined channel "' + this.name + '"');
 };
 
-LibrecastChannel.prototype.part = function() {
+lc.LibrecastChannel.prototype.part = function() {
 	console.log('parting channel "' + this.name + '"');
 	this.lctx.send(this, LCAST_OP_CHANNEL_PART, this.parted);
 };
 
-LibrecastChannel.prototype.parted = function() {
+lc.LibrecastChannel.prototype.parted = function() {
 	console.log('parted channel "' + this.name + '"');
 };
 
-LibrecastChannel.prototype.ready = function(cb, opcode, len, id) {
+lc.LibrecastChannel.prototype.ready = function(cb, opcode, len, id) {
 	console.log("callback with opcode " + cb.opcode + " and token " + cb.token);
 	console.log("setting channel id to " + id);
 
@@ -374,7 +374,7 @@ LibrecastChannel.prototype.ready = function(cb, opcode, len, id) {
 	self.onready.call();
 };
 
-LibrecastChannel.prototype.getmsg = function(cb) {
+lc.LibrecastChannel.prototype.getmsg = function(cb) {
 	console.log("channel getmsgs");
 
 	/* TODO: filters (msgs since last received etc.) */
@@ -384,14 +384,14 @@ LibrecastChannel.prototype.getmsg = function(cb) {
 	this.lctx.send(this, LCAST_OP_CHANNEL_GETMSG, cb, key, key.length);
 };
 
-LibrecastChannel.prototype.getval = function(key, cb) {
+lc.LibrecastChannel.prototype.getval = function(key, cb) {
 	console.log("channel getval '" + key + "'");
 
 	/* set up callback, and send request */
 	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length, true);
 };
 
-LibrecastChannel.prototype.setval = function(key, val, cb) {
+lc.LibrecastChannel.prototype.setval = function(key, val, cb) {
 	console.log("channel setval '" + key + "': '" + val + "'");
 
 	var klen = key.length;
@@ -409,7 +409,7 @@ LibrecastChannel.prototype.setval = function(key, val, cb) {
 	this.lctx.send(this, LCAST_OP_CHANNEL_SETVAL, cb, buffer, buflen, true);
 };
 
-LibrecastChannel.prototype.send = function(msg) {
+lc.LibrecastChannel.prototype.send = function(msg) {
 	if (this.lctx.websocket.readyState == WS_OPEN) {
 		console.log('sending on channel "' + this.name + '": ' + msg);
 		this.lctx.send(this, LCAST_OP_CHANNEL_SEND, null, msg, msg.length);
@@ -419,7 +419,7 @@ LibrecastChannel.prototype.send = function(msg) {
 	}
 };
 
-function LibrecastSocket(lctx, onready) {
+lc.LibrecastSocket = function(lctx, onready) {
 	console.log("Socket constructor");
 	this.lctx = lctx;
 	this.id = undefined;
@@ -428,13 +428,13 @@ function LibrecastSocket(lctx, onready) {
 	this.onmessage = undefined;
 	lctx.send(this, LCAST_OP_SOCKET_NEW, this.ready);
 	this.defer = defer();
-}
+};
 
-LibrecastSocket.prototype.listen = function (callback) {
+lc.LibrecastSocket.prototype.listen = function (callback) {
 	this.lctx.send(this, LCAST_OP_SOCKET_LISTEN, callback);
 };
 
-LibrecastSocket.prototype.ready = function (cb, opcode, len, id) {
+lc.LibrecastSocket.prototype.ready = function (cb, opcode, len, id) {
 	console.log("Socket.ready()");
 
 	var self = cb.obj;
