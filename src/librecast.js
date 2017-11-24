@@ -25,46 +25,46 @@ var LIBRECAST = (function ($) {
 "use strict";
 var lc = {};
 
-var WS_CONNECTING = 0;
-var WS_OPEN = 1;
-var WS_CLOSING = 2;
-var WS_CLOSED = 3;
+lc.WS_CONNECTING = 0;
+lc.WS_OPEN = 1;
+lc.WS_CLOSING = 2;
+lc.WS_CLOSED = 3;
 
-var LC_ERROR_SUCCESS = 0;
-var LC_ERROR_FAILURE = 1;
-var LC_ERROR_WEBSOCKET_UNSUPPORTED = 2;
-var LC_ERROR_WEBSOCKET_NOTREADY = 3;
-var LC_ERROR_CALLBACK_NOT_FUNCTION = 4;
+lc.LC_ERROR_SUCCESS = 0;
+lc.LC_ERROR_FAILURE = 1;
+lc.LC_ERROR_WEBSOCKET_UNSUPPORTED = 2;
+lc.LC_ERROR_WEBSOCKET_NOTREADY = 3;
+lc.LC_ERROR_CALLBACK_NOT_FUNCTION = 4;
 
-var LCAST_OP_NOOP			  = 0x01;
-var LCAST_OP_SETOPT			  = 0x02;
-var LCAST_OP_SOCKET_NEW		  = 0x03;
-var LCAST_OP_SOCKET_GETOPT	  = 0x04;
-var LCAST_OP_SOCKET_SETOPT	  = 0x05;
-var LCAST_OP_SOCKET_LISTEN	  = 0x06;
-var LCAST_OP_SOCKET_IGNORE	  = 0x07;
-var LCAST_OP_SOCKET_CLOSE	  = 0x08;
-var LCAST_OP_SOCKET_MSG		  = 0x09;
-var LCAST_OP_CHANNEL_NEW	  = 0x0a;
-var LCAST_OP_CHANNEL_GETMSG   = 0x0b;
-var LCAST_OP_CHANNEL_GETOPT   = 0x0c;
-var LCAST_OP_CHANNEL_SETOPT   = 0x0d;
-var LCAST_OP_CHANNEL_GETVAL   = 0x0e;
-var LCAST_OP_CHANNEL_SETVAL   = 0x0f;
-var LCAST_OP_CHANNEL_BIND	  = 0x10;
-var LCAST_OP_CHANNEL_UNBIND   = 0x11;
-var LCAST_OP_CHANNEL_JOIN	  = 0x12;
-var LCAST_OP_CHANNEL_PART	  = 0x13;
-var LCAST_OP_CHANNEL_SEND	  = 0x14;
+lc.LCAST_OP_NOOP			  = 0x01;
+lc.LCAST_OP_SETOPT			  = 0x02;
+lc.LCAST_OP_SOCKET_NEW		  = 0x03;
+lc.LCAST_OP_SOCKET_GETOPT	  = 0x04;
+lc.LCAST_OP_SOCKET_SETOPT	  = 0x05;
+lc.LCAST_OP_SOCKET_LISTEN	  = 0x06;
+lc.LCAST_OP_SOCKET_IGNORE	  = 0x07;
+lc.LCAST_OP_SOCKET_CLOSE	  = 0x08;
+lc.LCAST_OP_SOCKET_MSG		  = 0x09;
+lc.LCAST_OP_CHANNEL_NEW	  = 0x0a;
+lc.LCAST_OP_CHANNEL_GETMSG   = 0x0b;
+lc.LCAST_OP_CHANNEL_GETOPT   = 0x0c;
+lc.LCAST_OP_CHANNEL_SETOPT   = 0x0d;
+lc.LCAST_OP_CHANNEL_GETVAL   = 0x0e;
+lc.LCAST_OP_CHANNEL_SETVAL   = 0x0f;
+lc.LCAST_OP_CHANNEL_BIND	  = 0x10;
+lc.LCAST_OP_CHANNEL_UNBIND   = 0x11;
+lc.LCAST_OP_CHANNEL_JOIN	  = 0x12;
+lc.LCAST_OP_CHANNEL_PART	  = 0x13;
+lc.LCAST_OP_CHANNEL_SEND	  = 0x14;
 
-var LCAST_HEADER_LENGTH = 25;
+lc.LCAST_HEADER_LENGTH = 25;
 
 var librecastErrorMsg = {};
-librecastErrorMsg[LC_ERROR_SUCCESS] = "Success";
-librecastErrorMsg[LC_ERROR_FAILURE] = "Failure";
-librecastErrorMsg[LC_ERROR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
-librecastErrorMsg[LC_ERROR_WEBSOCKET_NOTREADY] = "Websocket not ready";
-librecastErrorMsg[LC_ERROR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+librecastErrorMsg[lc.LC_ERROR_SUCCESS] = "Success";
+librecastErrorMsg[lc.LC_ERROR_FAILURE] = "Failure";
+librecastErrorMsg[lc.LC_ERROR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
+librecastErrorMsg[lc.LC_ERROR_WEBSOCKET_NOTREADY] = "Websocket not ready";
+librecastErrorMsg[lc.LC_ERROR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
 
 var tok = 42;
 var lcastCallbacks = {};
@@ -245,13 +245,13 @@ lc.Librecast.prototype.wsMessage = function(msg) {
 			console.log("token: " + token);
 			console.log("timestamp: " + timestamp);
 			if (len > 0) {
-				if (opcode === LCAST_OP_CHANNEL_SETVAL) {
-					var keylen = dataview.getUint64(LCAST_HEADER_LENGTH);
-					key = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8, keylen);
-					val = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH + 8 + keylen);
+				if (opcode === lc.LCAST_OP_CHANNEL_SETVAL) {
+					var keylen = dataview.getUint64(lc.LCAST_HEADER_LENGTH);
+					key = new StringView(msg.data, "UTF-8", lc.LCAST_HEADER_LENGTH + 8, keylen);
+					val = new StringView(msg.data, "UTF-8", lc.LCAST_HEADER_LENGTH + 8 + keylen);
 				}
 				else {
-					var sv = new StringView(msg.data, "UTF-8", LCAST_HEADER_LENGTH, len);
+					var sv = new StringView(msg.data, "UTF-8", lc.LCAST_HEADER_LENGTH, len);
 					val = sv.toString();
 				}
 			}
@@ -296,20 +296,20 @@ lc.Librecast.prototype.send = function(obj, opcode, callback, data, len, temp) {
 		/* copy ArrayBuffer into new buffer with space for header data */
 		idx = LCAST_HEADER_LENGTH + len;
 		var tmp = new Uint8Array(idx);
-		tmp.set(new Uint8Array(data), LCAST_HEADER_LENGTH);
+		tmp.set(new Uint8Array(data), lc.LCAST_HEADER_LENGTH);
 		buffer = tmp.buffer;
 		dataview = new DataView(buffer);
 	}
 	else {
 		/* string data, convert to UTF-8 */
-		buffer = new ArrayBuffer(LCAST_HEADER_LENGTH + len * 4);
+		buffer = new ArrayBuffer(lc.LCAST_HEADER_LENGTH + len * 4);
 		dataview = new DataView(buffer);
-		idx = convertUTF16toUTF8(LCAST_HEADER_LENGTH, data, len, dataview);
+		idx = convertUTF16toUTF8(lc.LCAST_HEADER_LENGTH, data, len, dataview);
 	}
 
 	/* write headers */
 	dataview.setUint8(0, opcode);
-	dataview.setUint32(1, idx - LCAST_HEADER_LENGTH);
+	dataview.setUint32(1, idx - lc.LCAST_HEADER_LENGTH);
 	dataview.setUint32(5, id);
 	dataview.setUint32(9, id2);
 	dataview.setUint32(13, cb.token);
@@ -327,7 +327,7 @@ lc.LibrecastChannel = function(lctx, name, onready) {
 	this.name = name;
 	var cb = new LibrecastCallback(this, null, onready);
 	this.onready = cb;
-	lctx.send(this, LCAST_OP_CHANNEL_NEW, this.ready, name, name.length);
+	lctx.send(this, lc.LCAST_OP_CHANNEL_NEW, this.ready, name, name.length);
 
 	this.defer = defer();
 };
@@ -336,7 +336,7 @@ lc.LibrecastChannel.prototype.bind = function(sock, callback) {
 	console.log("binding channel " + this.name + " to socket " + sock.id);
 	this.id = this.id;
 	this.id2 = sock.id;
-	this.lctx.send(this, LCAST_OP_CHANNEL_BIND, callback);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_BIND, callback);
 };
 
 lc.LibrecastChannel.prototype.bound = function() {
@@ -345,7 +345,7 @@ lc.LibrecastChannel.prototype.bound = function() {
 
 lc.LibrecastChannel.prototype.join = function(callback) {
 	console.log('joining channel "' + this.name + '"');
-	this.lctx.send(this, LCAST_OP_CHANNEL_JOIN, callback);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_JOIN, callback);
 };
 
 lc.LibrecastChannel.prototype.joined = function() {
@@ -354,7 +354,7 @@ lc.LibrecastChannel.prototype.joined = function() {
 
 lc.LibrecastChannel.prototype.part = function() {
 	console.log('parting channel "' + this.name + '"');
-	this.lctx.send(this, LCAST_OP_CHANNEL_PART, this.parted);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_PART, this.parted);
 };
 
 lc.LibrecastChannel.prototype.parted = function() {
@@ -381,14 +381,14 @@ lc.LibrecastChannel.prototype.getmsg = function(cb) {
 
 	/* send query */
 	var key = "";
-	this.lctx.send(this, LCAST_OP_CHANNEL_GETMSG, cb, key, key.length);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_GETMSG, cb, key, key.length);
 };
 
 lc.LibrecastChannel.prototype.getval = function(key, cb) {
 	console.log("channel getval '" + key + "'");
 
 	/* set up callback, and send request */
-	this.lctx.send(this, LCAST_OP_CHANNEL_GETVAL, cb, key, key.length, true);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_GETVAL, cb, key, key.length, true);
 };
 
 lc.LibrecastChannel.prototype.setval = function(key, val, cb) {
@@ -406,13 +406,13 @@ lc.LibrecastChannel.prototype.setval = function(key, val, cb) {
 	dataview.setUint32(0, klen);
 	idx = convertUTF16toUTF8(idx, key, klen, dataview);
 	idx = convertUTF16toUTF8(idx, val, vlen, dataview);
-	this.lctx.send(this, LCAST_OP_CHANNEL_SETVAL, cb, buffer, buflen, true);
+	this.lctx.send(this, lc.LCAST_OP_CHANNEL_SETVAL, cb, buffer, buflen, true);
 };
 
 lc.LibrecastChannel.prototype.send = function(msg) {
-	if (this.lctx.websocket.readyState == WS_OPEN) {
+	if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 		console.log('sending on channel "' + this.name + '": ' + msg);
-		this.lctx.send(this, LCAST_OP_CHANNEL_SEND, null, msg, msg.length);
+		this.lctx.send(this, lc.LCAST_OP_CHANNEL_SEND, null, msg, msg.length);
 	}
 	else {
 		throw new LibrecastException(LC_ERROR_WEBSOCKET_NOTREADY);
@@ -426,12 +426,12 @@ lc.LibrecastSocket = function(lctx, onready) {
 	var cb = new LibrecastCallback(this, null, onready, true);
 	this.onready = cb;
 	this.onmessage = undefined;
-	lctx.send(this, LCAST_OP_SOCKET_NEW, this.ready);
+	lctx.send(this, lc.LCAST_OP_SOCKET_NEW, this.ready);
 	this.defer = defer();
 };
 
 lc.LibrecastSocket.prototype.listen = function (callback) {
-	this.lctx.send(this, LCAST_OP_SOCKET_LISTEN, callback);
+	this.lctx.send(this, lc.LCAST_OP_SOCKET_LISTEN, callback);
 };
 
 lc.LibrecastSocket.prototype.ready = function (cb, opcode, len, id) {
