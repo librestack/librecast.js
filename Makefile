@@ -3,6 +3,9 @@ MINIFY=uglifyjs --compress --mangle --
 
 all: lint minify
 
+debug: all
+	cp src/librecast.js js/librecast.min.js
+
 .PHONY: lint
 
 lint:
