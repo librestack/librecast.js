@@ -30,11 +30,12 @@ lc.WS_OPEN = 1;
 lc.WS_CLOSING = 2;
 lc.WS_CLOSED = 3;
 
-lc.ERROR_SUCCESS = 0;
-lc.ERROR_FAILURE = 1;
-lc.ERROR_WEBSOCKET_UNSUPPORTED = 2;
-lc.ERROR_WEBSOCKET_NOTREADY = 3;
-lc.ERROR_CALLBACK_NOT_FUNCTION = 4;
+lc.ERR_SUCCESS = 0;
+lc.ERR_FAILURE = 1;
+lc.ERR_WEBSOCKET_UNSUPPORTED = 2;
+lc.ERR_WEBSOCKET_NOTREADY = 3;
+lc.ERR_CALLBACK_NOT_FUNCTION = 4;
+lc.ERR_MISSING_ARG = 5;
 
 lc.OP_NOOP			  = 0x01;
 lc.OP_SETOPT			  = 0x02;
@@ -60,11 +61,12 @@ lc.OP_CHANNEL_SEND	  = 0x14;
 lc.HEADER_LENGTH = 25;
 
 lc.ErrorMsg = {};
-lc.ErrorMsg[lc.ERROR_SUCCESS] = "Success";
-lc.ErrorMsg[lc.ERROR_FAILURE] = "Failure";
-lc.ErrorMsg[lc.ERROR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
-lc.ErrorMsg[lc.ERROR_WEBSOCKET_NOTREADY] = "Websocket not ready";
-lc.ErrorMsg[lc.ERROR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+lc.ErrorMsg[lc.ERR_SUCCESS] = "Success";
+lc.ErrorMsg[lc.ERR_FAILURE] = "Failure";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_NOTREADY] = "Websocket not ready";
+lc.ErrorMsg[lc.ERR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+lc.ErrorMsg[lc.ERR_MISSING_ARGUMENT] = "Required argument is missing";
 
 var tok = 42;
 var lcastCallbacks = {};
@@ -185,7 +187,7 @@ lc.Context = function(onready) {
 	}
 	else {
 		console.log("websockets unsupported");
-		throw new LibrecastException(ERROR_WEBSOCKET_UNSUPPORTED);
+		throw new LibrecastException(lc.ERR_WEBSOCKET_UNSUPPORTED);
 	}
 
 	this.id = undefined;
@@ -329,6 +331,9 @@ lc.Context.prototype.send = function(obj, opcode, callback, data, len, temp) {
 
 lc.Channel = function(lctx, name, onready) {
 	console.log("Channel constructor");
+
+	if (name == undefined) { throw new LibrecastException(lc.ERR_MISSING_ARG); }
+
 	this.lctx = lctx;
 	this.id = undefined;
 	this.ws = lctx.websocket;
@@ -423,7 +428,7 @@ lc.Channel.prototype.send = function(msg) {
 		this.lctx.send(this, lc.OP_CHANNEL_SEND, null, msg, msg.length);
 	}
 	else {
-		throw new LibrecastException(ERROR_WEBSOCKET_NOTREADY);
+		throw new LibrecastException(lc.ERR_WEBSOCKET_NOTREADY);
 	}
 };
 
