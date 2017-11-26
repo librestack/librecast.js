@@ -145,7 +145,7 @@ function LibrecastCallback(obj, opcode, callback, temp) {
 	}
 }
 
-LibrecastCallback.prototype.call = function () {
+LibrecastCallback.prototype.trigger = function () {
 
 	if (typeof lcastCallbacks[this.token] === 'undefined') {
 		console.log("callback " + this.token + " undefined. Skipping.");
@@ -155,7 +155,7 @@ LibrecastCallback.prototype.call = function () {
 	if (typeof(this.callback) === 'function') {
 		var args = [].slice.call(arguments);
 		args.unshift(this);
-		this.callback.apply(this, args);
+		this.callback.apply(this.obj, args);
 	}
 	if (this.temp) {
 		console.log("Deleting callback token " + this.token);
@@ -263,7 +263,7 @@ lc.Context.prototype.wsMessage = function(msg) {
 			}
 			var cb = lcastCallbacks[token];
 			if (cb)
-				cb.call(opcode, len, id, token, key, val, timestamp);
+				cb.trigger(opcode, len, id, token, key, val, timestamp);
 			else
 				console.log("message with no matching callback token '" + token + "'");
 		}
@@ -345,11 +345,11 @@ lc.Channel = function(lctx, name, onready) {
 	this.defer = defer();
 };
 
-lc.Channel.prototype.bind = function(sock, callback) {
+lc.Channel.prototype.bindSocket = function(sock) {
 	console.log("binding channel " + this.name + " to socket " + sock.id);
 	this.id = this.id;
 	this.id2 = sock.id;
-	this.lctx.send(this, lc.OP_CHANNEL_BIND, callback);
+	this.lctx.send(this, lc.OP_CHANNEL_BIND, this.bound);
 };
 
 lc.Channel.prototype.bound = function() {
@@ -384,7 +384,7 @@ lc.Channel.prototype.ready = function(cb, opcode, len, id) {
 		console.log("resolving Channel.defer");
 		self.defer.resolve();
 	}
-	self.onready.call();
+	self.onready.trigger();
 };
 
 lc.Channel.prototype.getmsg = function(cb) {
@@ -460,7 +460,7 @@ lc.Socket.prototype.ready = function (cb, opcode, len, id) {
 		console.log("resolving Socket.defer");
 		self.defer.resolve();
 	}
-	self.onready.call();
+	self.onready.trigger();
 };
 
 return lc;
