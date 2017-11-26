@@ -345,15 +345,11 @@ lc.Channel = function(lctx, name, onready) {
 	this.defer = defer();
 };
 
-lc.Channel.prototype.bindSocket = function(sock) {
+lc.Channel.prototype.bindSocket = function(sock, callback) {
 	console.log("binding channel " + this.name + " to socket " + sock.id);
 	this.id = this.id;
 	this.id2 = sock.id;
-	this.lctx.send(this, lc.OP_CHANNEL_BIND, this.bound);
-};
-
-lc.Channel.prototype.bound = function() {
-	console.log('bound channel');
+	this.lctx.send(this, lc.OP_CHANNEL_BIND, callback);
 };
 
 lc.Channel.prototype.join = function(callback) {
