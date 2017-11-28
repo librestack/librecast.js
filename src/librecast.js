@@ -383,14 +383,11 @@ lc.Channel.prototype.ready = function(cb, opcode, len, id) {
 	self.onready.trigger();
 };
 
-lc.Channel.prototype.getmsg = function(cb) {
+lc.Channel.prototype.getmsg = function(cb, query) {
 	console.log("channel getmsgs");
 
-	/* TODO: filters (msgs since last received etc.) */
-
-	/* send query */
-	var key = "";
-	this.lctx.send(this, lc.OP_CHANNEL_GETMSG, cb, key, key.length);
+	query = (typeof query === 'undefined') ? "" : "" + query;
+	this.lctx.send(this, lc.OP_CHANNEL_GETMSG, cb, query, query.length);
 };
 
 lc.Channel.prototype.getval = function(key, cb) {
