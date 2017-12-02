@@ -488,10 +488,12 @@ lc.Query.prototype.key = function(db, key) {
 	return this;
 };
 
-lc.Query.prototype.timestamp = function(timestamp) {
+lc.Query.prototype.timestamp = function(timestamp, op) {
 	if (typeof timestamp !== 'undefined') {
+		if (typeof op === 'undefined') op = lc.QUERY_EQ;
+		op |= lc.QUERY_TIME;
 		timestamp = "" + timestamp;
-		this.filters.push({ "type": lc.QUERY_TIME | lc.QUERY_GT, "key": timestamp });
+		this.filters.push({ "type": op, "key": timestamp });
 		this.size += timestamp.length + 5;
 	}
 	return this;
