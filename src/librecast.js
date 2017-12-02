@@ -482,8 +482,9 @@ lc.Query = function() {
 };
 
 lc.Query.prototype.key = function(db, key) {
-	this.filters.push({ "type": lc.QUERY_KEY, "db": db, "key": key });
-	this.size += key.length + 1;
+	this.filters.push({ "type": lc.QUERY_DB, "key": db });
+	this.filters.push({ "type": lc.QUERY_KEY, "key": key });
+	this.size += db.length + key.length + 7;
 	return this;
 };
 
@@ -491,7 +492,7 @@ lc.Query.prototype.timestamp = function(timestamp) {
 	if (typeof timestamp !== 'undefined') {
 		timestamp = "" + timestamp;
 		this.filters.push({ "type": lc.QUERY_TIME | lc.QUERY_GT, "key": timestamp });
-		this.size += timestamp.length + 1;
+		this.size += timestamp.length + 5;
 	}
 	return this;
 };
@@ -507,6 +508,8 @@ lc.Query.prototype.packed = function() {
 		var type = this.filters[i].type;
 		dataview.setUint8(idx, type);
 		idx += 1;
+		dataview.setUint32(idx, key.length);
+		idx += 4;
 		idx = convertUTF16toUTF8(idx, key, key.length, dataview);
 	}
 
