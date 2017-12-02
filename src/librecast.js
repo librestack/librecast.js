@@ -505,7 +505,6 @@ lc.Query.prototype.packed = function() {
 	for (var i = 0; i < this.filters.length; i++) {
 		var key = this.filters[i].key;
 		var type = this.filters[i].type;
-		console.log("muppets: " + this.size);
 		dataview.setUint8(idx, type);
 		idx += 1;
 		idx = convertUTF16toUTF8(idx, key, key.length, dataview);
