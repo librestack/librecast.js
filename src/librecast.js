@@ -58,6 +58,20 @@ lc.OP_CHANNEL_JOIN	  = 0x12;
 lc.OP_CHANNEL_PART	  = 0x13;
 lc.OP_CHANNEL_SEND	  = 0x14;
 
+lc.QUERY_NOOP = 0;
+lc.QUERY_EQ = 1;
+lc.QUERY_NE = 2;
+lc.QUERY_LT = 4;
+lc.QUERY_GT = 8;
+lc.QUERY_TIME = 16;
+lc.QUERY_SRC = 32;
+lc.QUERY_DST = 64;
+lc.QUERY_CHANNEL = 128;
+lc.QUERY_DB = 256;
+lc.QUERY_KEY = 512;
+lc.QUERY_MIN = 1024;
+lc.QUERY_MAX = 2048;
+
 lc.HEADER_LENGTH = 25;
 
 lc.ErrorMsg = {};
@@ -383,11 +397,11 @@ lc.Channel.prototype.ready = function(cb, opcode, len, id) {
 	self.onready.trigger();
 };
 
-lc.Channel.prototype.getmsg = function(cb, query) {
+lc.Channel.prototype.getmsg = function(cb, qry) {
 	console.log("channel getmsgs");
 
-	query = (typeof query === 'undefined') ? "" : "" + query;
-	this.lctx.send(this, lc.OP_CHANNEL_GETMSG, cb, query, query.length);
+	if (typeof qry === 'undefined') { qry = new lc.Query(); }
+	this.lctx.send(this, lc.OP_CHANNEL_GETMSG, cb, qry.packed(), qry.size);
 };
 
 lc.Channel.prototype.getval = function(key, cb) {
@@ -455,6 +469,51 @@ lc.Socket.prototype.ready = function (cb, opcode, len, id) {
 	}
 	self.onready.trigger();
 };
+
+
+//
+// Librecast.Query -------------------------------------------------------------
+//
+
+lc.Query = function() {
+	this.filters = [];
+	this.size = 0;
+	return this;
+};
+
+lc.Query.prototype.key = function(db, key) {
+	this.filters.push({ "type": lc.QUERY_KEY, "db": db, "key": key });
+	this.size += key.length + 1;
+	return this;
+};
+
+lc.Query.prototype.timestamp = function(timestamp) {
+	if (typeof timestamp !== 'undefined') {
+		timestamp = "" + timestamp;
+		this.filters.push({ "type": lc.QUERY_TIME | lc.QUERY_GT, "key": timestamp });
+		this.size += timestamp.length + 1;
+	}
+	return this;
+};
+
+lc.Query.prototype.packed = function() {
+	if (this.size === 0) return "";
+	var buffer = new ArrayBuffer(this.size);
+	var dataview = new DataView(buffer);
+	var idx = 0;
+
+	for (var i = 0; i < this.filters.length; i++) {
+		var key = this.filters[i].key;
+		var type = this.filters[i].type;
+		console.log("muppets: " + this.size);
+		dataview.setUint8(idx, type);
+		idx += 1;
+		idx = convertUTF16toUTF8(idx, key, key.length, dataview);
+	}
+
+	return buffer;
+};
+
 
 return lc;
 
