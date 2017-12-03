@@ -131,6 +131,22 @@ function defer() {
 	}
 }
 
+
+/* extend DataView to provide missing getUint64() */
+/* returns goog.math.Long(), as js doesn't support 64 bit integers directly */
+if (DataView.prototype.getUint64 === undefined) {
+	DataView.prototype.getUint64 = function (byteOffset, littleEndian) {
+		var lo = (littleEndian) ? 0 : 4;
+		var hi = (littleEndian) ? 4 : 0;
+
+		var x = new goog.math.Long(this.getUint32(byteOffset + hi, littleEndian)).shiftLeft(32);
+		var y = new goog.math.Long(this.getUint32(byteOffset + lo, littleEndian));
+
+		return x.or(y);
+	};
+}
+
+
 function LibrecastCallback(obj, opcode, callback, temp) {
 	this.obj = obj;
 	this.opcode = opcode;
@@ -239,17 +255,17 @@ lc.Context.prototype.wsMessage = function(msg) {
 			var id = dataview.getUint32(5);
 			var id2 = dataview.getUint32(9);
 			var token = dataview.getUint32(13);
-			var timestamp = dataview.getUint32(17) * 1000; /* s -> ms */
+			var timestamp = dataview.getUint64(17);
 
 			console.log("opcode: " + opcode);
 			console.log("len: " + len);
 			console.log("id: " + id);
 			console.log("id2: " + id2);
 			console.log("token: " + token);
-			console.log("timestamp: " + timestamp);
+			console.log("timestamp: " + timestamp.toString());
 			if (len > 0) {
 				if (opcode === lc.OP_CHANNEL_SETVAL) {
-					var keylen = dataview.getUint32(lc.HEADER_LENGTH);
+					var keylen = dataview.getUint64(lc.HEADER_LENGTH);
 					key = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8, keylen);
 					val = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8 + keylen);
 				}
