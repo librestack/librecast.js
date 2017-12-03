@@ -131,23 +131,6 @@ function defer() {
 	}
 }
 
-
-/* extend DataView to provide missing getUint64() */
-/* this function based on code from spice-html5
- * https://github.com/SPICE/spice-html5/blob/master/spicedataview.js
- * Copyright (C) 2013 by Jeremy P. White <jwhite@codeweavers.com>
- * License: LGPL3+ */
-if (DataView.prototype.getUint64 === undefined) {
-	DataView.prototype.getUint64 = function (byteOffset, littleEndian) {
-		var lo = (littleEndian) ? 0 : 4;
-		var hi = (littleEndian) ? 4 : 0;
-
-		return (this.getUint32(byteOffset + hi, littleEndian) << 32) |
-				this.getUint32(byteOffset + lo, littleEndian);
-	};
-}
-
-
 function LibrecastCallback(obj, opcode, callback, temp) {
 	this.obj = obj;
 	this.opcode = opcode;
