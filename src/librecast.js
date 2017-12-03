@@ -481,9 +481,11 @@ lc.Query = function() {
 };
 
 lc.Query.prototype.key = function(db, key) {
-	this.filters.push({ "type": lc.QUERY_DB, "key": db });
-	this.filters.push({ "type": lc.QUERY_KEY, "key": key });
-	this.size += db.length + key.length + 7;
+	if (db && key) {
+		this.filters.push({ "type": lc.QUERY_DB, "key": db });
+		this.filters.push({ "type": lc.QUERY_KEY, "key": key });
+		this.size += db.length + key.length + 12;
+	}
 	return this;
 };
 
@@ -491,25 +493,27 @@ lc.Query.prototype.timestamp = function(timestamp, op) {
 	if (typeof timestamp !== 'undefined') {
 		if (typeof op === 'undefined') op = lc.QUERY_EQ;
 		op |= lc.QUERY_TIME;
-		timestamp = timestamp.toString();
 		this.filters.push({ "type": op, "key": timestamp });
-		this.size += timestamp.length + 5;
+		this.size += timestamp.length + 6;
 	}
 	return this;
 };
 
 lc.Query.prototype.packed = function() {
-	if (this.size === 0) return "";
+	if (!this.size) return "";
 	var buffer = new ArrayBuffer(this.size);
 	var dataview = new DataView(buffer);
 	var idx = 0;
 
 	for (var i = 0; i < this.filters.length; i++) {
+		// [opcode][len][key]
 		var key = this.filters[i].key;
 		var type = this.filters[i].type;
-		dataview.setUint8(idx, type);
-		idx += 1;
+		dataview.setUint16(idx, type);
+		idx += 2;
 		dataview.setUint32(idx, key.length);
+		console.log("nightwork: " + type);
+		console.log("nightwork: " + key.length);
 		idx += 4;
 		idx = convertUTF16toUTF8(idx, key, key.length, dataview);
 	}
