@@ -265,7 +265,7 @@ lc.Context.prototype.wsMessage = function(msg) {
 			console.log("timestamp: " + timestamp.toString());
 			if (len > 0) {
 				if (opcode === lc.OP_CHANNEL_SETVAL) {
-					var keylen = dataview.getUint64(lc.HEADER_LENGTH);
+					var keylen = dataview.getUint64(lc.HEADER_LENGTH).getLowBits();
 					key = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8, keylen);
 					val = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8 + keylen);
 				}
@@ -491,7 +491,7 @@ lc.Query.prototype.timestamp = function(timestamp, op) {
 	if (typeof timestamp !== 'undefined') {
 		if (typeof op === 'undefined') op = lc.QUERY_EQ;
 		op |= lc.QUERY_TIME;
-		timestamp = "" + timestamp;
+		timestamp = timestamp.toString();
 		this.filters.push({ "type": op, "key": timestamp });
 		this.size += timestamp.length + 5;
 	}
