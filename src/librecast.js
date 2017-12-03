@@ -239,7 +239,7 @@ lc.Context.prototype.wsMessage = function(msg) {
 			var id = dataview.getUint32(5);
 			var id2 = dataview.getUint32(9);
 			var token = dataview.getUint32(13);
-			var timestamp = dataview.getUint64(17) * 1000; /* s -> ms */
+			var timestamp = dataview.getUint32(17) * 1000; /* s -> ms */
 
 			console.log("opcode: " + opcode);
 			console.log("len: " + len);
@@ -249,7 +249,7 @@ lc.Context.prototype.wsMessage = function(msg) {
 			console.log("timestamp: " + timestamp);
 			if (len > 0) {
 				if (opcode === lc.OP_CHANNEL_SETVAL) {
-					var keylen = dataview.getUint64(lc.HEADER_LENGTH);
+					var keylen = dataview.getUint32(lc.HEADER_LENGTH);
 					key = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8, keylen);
 					val = new StringView(msg.data, "UTF-8", lc.HEADER_LENGTH + 8 + keylen);
 				}
