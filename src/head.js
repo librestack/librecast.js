@@ -20,8 +20,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-var LIBRECAST = (function () {
+const LIBRECAST = (function () {
 
 "use strict";
-var lc = {};
 
+var lc = {};
