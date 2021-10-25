@@ -40,4 +40,19 @@ lc.Channel = class {
 		});
 	}
 
+	send(data) {
+		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
+			return new Promise((resolve, reject) => {
+				const msg = new lc.Message(data);
+				msg.opcode = lc.OP_CHANNEL_SEND;
+				msg.id = this.id;
+				msg.token = this.lctx.callback(resolve, reject);
+				this.lctx.send(msg);
+			});
+		}
+		else {
+			throw new LibrecastException(lc.ERR_WEBSOCKET_NOTREADY);
+		}
+	}
+
 };

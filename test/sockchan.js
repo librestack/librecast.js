@@ -34,6 +34,7 @@ QUnit.module('Librecast Channel + Socket Operations', function() {
 			.then(() => {
 				chan.join().then(() => {
 					assert.ok(true, "Channel joined");
+					chan.send(messageText);
 					done();
 				});
 			});

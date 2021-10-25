@@ -25,7 +25,11 @@ const LIBRECAST = (function () {
 "use strict";
 
 var lc = {};
-lc.HEADER_LENGTH = 25;
+
+lc.WS_CONNECTING = 0;
+lc.WS_OPEN = 1;
+lc.WS_CLOSING = 2;
+lc.WS_CLOSED = 3;
 
 lc.OP_NOOP              = 0x01;
 lc.OP_SETOPT            = 0x02;
@@ -48,6 +52,28 @@ lc.OP_CHANNEL_JOIN      = 0x12;
 lc.OP_CHANNEL_PART      = 0x13;
 lc.OP_CHANNEL_SEND      = 0x14;
 
+lc.HEADER_LENGTH = 25;
+
+lc.ERR_SUCCESS = 0;
+lc.ERR_FAILURE = 1;
+lc.ERR_WEBSOCKET_UNSUPPORTED = 2;
+lc.ERR_WEBSOCKET_NOTREADY = 3;
+lc.ERR_CALLBACK_NOT_FUNCTION = 4;
+lc.ERR_MISSING_ARG = 5;
+
+lc.ErrorMsg = {};
+lc.ErrorMsg[lc.ERR_SUCCESS] = "Success";
+lc.ErrorMsg[lc.ERR_FAILURE] = "Failure";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_NOTREADY] = "Websocket not ready";
+lc.ErrorMsg[lc.ERR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+lc.ErrorMsg[lc.ERR_MISSING_ARGUMENT] = "Required argument is missing";
+
+function LibrecastException(errorCode) {
+	this.code = errorCode;
+	this.name = lc.ErrorMsg[errorCode];
+	this.errormsg = "ERROR (" + this.code + ") " + this.name;
+}
 const UINT32_MAX = 4294967295;
 
 /* convert utf16 to utf8 and append to dataview
@@ -258,6 +284,21 @@ lc.Channel = class {
 			msg.token = this.lctx.callback(resolve, reject);
 			this.lctx.send(msg);
 		});
+	}
+
+	send(data) {
+		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
+			return new Promise((resolve, reject) => {
+				const msg = new lc.Message(data);
+				msg.opcode = lc.OP_CHANNEL_SEND;
+				msg.id = this.id;
+				msg.token = this.lctx.callback(resolve, reject);
+				this.lctx.send(msg);
+			});
+		}
+		else {
+			throw new LibrecastException(lc.ERR_WEBSOCKET_NOTREADY);
+		}
 	}
 
 };

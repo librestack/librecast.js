@@ -25,7 +25,11 @@ const LIBRECAST = (function () {
 "use strict";
 
 var lc = {};
-lc.HEADER_LENGTH = 25;
+
+lc.WS_CONNECTING = 0;
+lc.WS_OPEN = 1;
+lc.WS_CLOSING = 2;
+lc.WS_CLOSED = 3;
 
 lc.OP_NOOP              = 0x01;
 lc.OP_SETOPT            = 0x02;
@@ -47,4 +51,21 @@ lc.OP_CHANNEL_UNBIND    = 0x11;
 lc.OP_CHANNEL_JOIN      = 0x12;
 lc.OP_CHANNEL_PART      = 0x13;
 lc.OP_CHANNEL_SEND      = 0x14;
+
+lc.HEADER_LENGTH = 25;
+
+lc.ERR_SUCCESS = 0;
+lc.ERR_FAILURE = 1;
+lc.ERR_WEBSOCKET_UNSUPPORTED = 2;
+lc.ERR_WEBSOCKET_NOTREADY = 3;
+lc.ERR_CALLBACK_NOT_FUNCTION = 4;
+lc.ERR_MISSING_ARG = 5;
+
+lc.ErrorMsg = {};
+lc.ErrorMsg[lc.ERR_SUCCESS] = "Success";
+lc.ErrorMsg[lc.ERR_FAILURE] = "Failure";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_UNSUPPORTED] = "Browser does not support websockets";
+lc.ErrorMsg[lc.ERR_WEBSOCKET_NOTREADY] = "Websocket not ready";
+lc.ErrorMsg[lc.ERR_CALLBACK_NOT_FUNCTION] = "Callback not a function";
+lc.ErrorMsg[lc.ERR_MISSING_ARGUMENT] = "Required argument is missing";
 
