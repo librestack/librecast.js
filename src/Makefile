@@ -6,4 +6,5 @@ CLASSES := context.js message.js socket.js
 	cat message.js >> $@
 	cat context.js >> $@
 	cat socket.js >> $@
+	cat channel.js >> $@
 	cat foot.js >> $@
