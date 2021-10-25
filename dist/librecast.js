@@ -114,6 +114,13 @@ lc.Message = class {
 		this.id2 = 0;
 		this.token = 0;
 	};
+
+	get utf8() {
+		if (this.data !== undefined) {
+			const sv = new StringView(this.data, "UTF-8", lc.HEADER_LENGTH, this.len);
+			return sv.toString();
+		}
+	}
 };
 //
 // Librecast.Context -----------------------------------------------------------
@@ -203,7 +210,7 @@ lc.Context = class {
 		console.log("websocket message received (type=" + msg.type +")");
 		if (typeof(msg) === 'object' && msg.data instanceof ArrayBuffer) {
 			const dataview = new DataView(msg.data);
-			const cmsg = new lc.Message();
+			const cmsg = new lc.Message(msg.data);
 			cmsg.opcode = dataview.getUint8(0);
 			cmsg.len = dataview.getUint32(1);
 			cmsg.id = dataview.getUint32(5);
@@ -243,6 +250,17 @@ lc.Socket = class {
 			this.id = msg.id;
 		});
 	};
+
+	listen() {
+		console.log("listening on socket " + this.id);
+		return new Promise((resolve, reject) => {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_SOCKET_LISTEN;
+			msg.id = this.id;
+			msg.token = this.lctx.callback(resolve, reject);
+			this.lctx.send(msg);
+		});
+	}
 };
 lc.Channel = class {
 	constructor(lctx, channelName) {

@@ -7,4 +7,11 @@ lc.Message = class {
 		this.id2 = 0;
 		this.token = 0;
 	};
+
+	get utf8() {
+		if (this.data !== undefined) {
+			const sv = new StringView(this.data, "UTF-8", lc.HEADER_LENGTH, this.len);
+			return sv.toString();
+		}
+	}
 };

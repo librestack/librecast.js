@@ -14,4 +14,15 @@ lc.Socket = class {
 			this.id = msg.id;
 		});
 	};
+
+	listen() {
+		console.log("listening on socket " + this.id);
+		return new Promise((resolve, reject) => {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_SOCKET_LISTEN;
+			msg.id = this.id;
+			msg.token = this.lctx.callback(resolve, reject);
+			this.lctx.send(msg);
+		});
+	}
 };

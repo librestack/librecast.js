@@ -86,7 +86,7 @@ lc.Context = class {
 		console.log("websocket message received (type=" + msg.type +")");
 		if (typeof(msg) === 'object' && msg.data instanceof ArrayBuffer) {
 			const dataview = new DataView(msg.data);
-			const cmsg = new lc.Message();
+			const cmsg = new lc.Message(msg.data);
 			cmsg.opcode = dataview.getUint8(0);
 			cmsg.len = dataview.getUint32(1);
 			cmsg.id = dataview.getUint32(5);

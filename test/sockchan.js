@@ -1,6 +1,6 @@
 QUnit.module('Librecast Channel + Socket Operations', function() {
 	QUnit.test("Librecast Socket", function(assert) {
-		const done = assert.async(5);
+		const done = assert.async(6);
 		const lctx = new LIBRECAST.Context();
 		const channelName = "test";
 		const messageText = "hello world";
@@ -15,6 +15,11 @@ QUnit.module('Librecast Channel + Socket Operations', function() {
 
 			sock.oncreate.then( () => {
 				assert.ok(sock, "Socket created");
+				sock.listen().then(msg => {
+					assert.ok(true, "message received on Socket");
+					assert.strictEqual(msg.utf8, messageText, "message verified");
+					done();
+				});
 				done();
 			});
 
