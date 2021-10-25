@@ -29,4 +29,15 @@ lc.Channel = class {
 		});
 	}
 
+	join() {
+		console.log('joining channel "' + this.name + '"');
+		return new Promise((resolve, reject) => {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_CHANNEL_JOIN;
+			msg.id = this.id;
+			msg.token = this.lctx.callback(resolve, reject);
+			this.lctx.send(msg);
+		});
+	}
+
 };
