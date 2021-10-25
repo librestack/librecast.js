@@ -9,7 +9,6 @@ QUnit.module('LibrecastContext', function() {
 		})
 		.then( () => {
 			const msg = new LIBRECAST.Message('hi there');
-			msg.opcode = LIBRECAST.OP_SOCKET_NEW;
 			lctx.send(msg);
 			done();
 		});
