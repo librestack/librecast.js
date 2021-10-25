@@ -86,18 +86,19 @@ lc.Context = class {
 		console.log("websocket message received (type=" + msg.type +")");
 		if (typeof(msg) === 'object' && msg.data instanceof ArrayBuffer) {
 			const dataview = new DataView(msg.data);
-			const opcode = dataview.getUint8(0);
-			const len = dataview.getUint32(1);
-			const id = dataview.getUint32(5);
-			const id2 = dataview.getUint32(9);
-			const token = dataview.getUint32(13);
-			console.log("opcode: " + opcode);
-			console.log("len: " + len);
-			console.log("id: " + id);
-			console.log("id2: " + id2);
-			console.log("token: " + token);
-			if (this.callstack[token] !== undefined) {
-				this.callstack[token].resolve();
+			const cmsg = new lc.Message();
+			cmsg.opcode = dataview.getUint8(0);
+			cmsg.len = dataview.getUint32(1);
+			cmsg.id = dataview.getUint32(5);
+			cmsg.id2 = dataview.getUint32(9);
+			cmsg.token = dataview.getUint32(13);
+			console.log("opcode: " + cmsg.opcode);
+			console.log("len: " + cmsg.len);
+			console.log("id: " + cmsg.id);
+			console.log("id2: " + cmsg.id2);
+			console.log("token: " + cmsg.token);
+			if (this.callstack[cmsg.token] !== undefined) {
+				this.callstack[cmsg.token].resolve(cmsg);
 			}
 		}
 	}

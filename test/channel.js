@@ -8,9 +8,9 @@ QUnit.module('Librecast Channel', function() {
 			done();
 		})
 		.then( () => {
-			const sock = new LIBRECAST.Channel(lctx, "this space for rent");
-			sock.then( () => {
-				assert.ok(sock, "new LIBRECAST.Channel");
+			const chan = new LIBRECAST.Channel(lctx, "this space for rent");
+			chan.oncreate.then( () => {
+				assert.ok(chan, "new LIBRECAST.Channel");
 				done();
 			});
 		});

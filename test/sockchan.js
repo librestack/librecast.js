@@ -12,21 +12,25 @@ QUnit.module('Librecast Channel + Socket Operations', function() {
 			const sock = new LIBRECAST.Socket(lctx);
 			const chan = new LIBRECAST.Channel(lctx, channelName);
 
-			sock.then( () => {
+			sock.oncreate.then( () => {
 				assert.ok(sock, "Socket created");
 				done();
 			});
 
-			chan.then(() => {
+			chan.oncreate.then(() => {
 				assert.ok(chan, "Channel created");
 				done();
 			});
 
-			Promise.all([sock, chan])
+			Promise.all([sock.oncreate, chan.oncreate])
 			.then(() => {
 				assert.ok(true, "Socket and Channel both created");
-				done();
+				chan.bind(sock).then(() => {
+					assert.ok(true, "Channel bound to Socket");
+					done();
+				});
 			});
+
 		});
 	});
 });

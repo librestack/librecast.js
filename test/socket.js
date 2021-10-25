@@ -9,7 +9,7 @@ QUnit.module('Librecast Socket', function() {
 		})
 		.then( () => {
 			const sock = new LIBRECAST.Socket(lctx);
-			sock.then( () => {
+			sock.oncreate.then( () => {
 				assert.ok(sock, "new LIBRECAST.Socket");
 				done();
 			});
