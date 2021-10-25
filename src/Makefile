@@ -1,4 +1,4 @@
-CLASSES := context.js message.js socket.js
+CLASSES := context.js message.js socket.js channel.js
 
 ../dist/librecast.js: head.js $(CLASSES) foot.js
 	cat head.js > $@

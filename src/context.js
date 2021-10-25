@@ -6,7 +6,7 @@ lc.Context = class {
 
 	constructor() {
 		console.log("Librecast context constructor");
-		this.token = 0;
+		this.tok = 0;
 		this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
 		this.url += document.location.host + "/";
 		this.callstack = [];
@@ -14,7 +14,7 @@ lc.Context = class {
 		this.connect();
 	};
 
-	connect = () => {
+	connect() {
 		console.log("Librecast.connect()");
 
 		if (window.WebSocket) {
@@ -33,26 +33,28 @@ lc.Context = class {
 		this.websocket.onopen = (e) => { this.wsOpen(e); };
 	};
 
-	close = () => {
+	close() {
 		console.log("Librecast close()");
 		this.websocket.close();
 	};
 
-	token = () => {
-		if (++this.token >= UINT32_MAX) this.token = 0;
-		return this.token;
+	get token() {
+		if (++this.tok >= UINT32_MAX) this.tok = 0;
+		return this.tok;
 	};
 
-	callback = (resolve, reject) => {
+	callback(resolve, reject) {
 		const token = this.token;
 		const cb = {};
 		cb.resolve = resolve;
 		cb.reject = reject;
 		this.callstack[token] = cb;
+		console.log("callback created with token = " + token);
 		// FIXME - need to expire old tokens, or will create leak
+		return token;
 	};
 
-	send = (msg) => {
+	send(msg) {
 		let buffer, dataview, idx;
 		buffer = new ArrayBuffer(lc.HEADER_LENGTH + msg.len * 4);
 		dataview = new DataView(buffer);
@@ -68,19 +70,19 @@ lc.Context = class {
 		this.websocket.send(buffer);
 	};
 
-	wsClose = (e) => {
+	wsClose(e) {
 		console.log("websocket close: (" + e.code + ") " + e.reason);
 		console.log("websocket.readyState: " + this.websocket.readyState);
 		console.log("reinitializing websocket");
 		this.connect();
 	};
 
-	wsError = (e) => {
+	wsError(e) {
 		console.log("websocket error" + e.message);
 		console.log("websocket.readyState: " + this.websocket.readyState);
 	};
 
-	wsMessage = (msg) => {
+	wsMessage(msg) {
 		console.log("websocket message received (type=" + msg.type +")");
 		if (typeof(msg) === 'object' && msg.data instanceof ArrayBuffer) {
 			const dataview = new DataView(msg.data);
@@ -100,7 +102,7 @@ lc.Context = class {
 		}
 	}
 
-	wsOpen = (e) => {
+	wsOpen(e) {
 		console.log("websocket open");
 		console.log("websocket.readyState: " + this.websocket.readyState);
 		this.resolveconnect();

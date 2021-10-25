@@ -7,7 +7,7 @@ lc.Socket = class {
 		return new Promise((resolve, reject) => {
 			const msg = new lc.Message();
 			msg.opcode = lc.OP_SOCKET_NEW;
-			this.lctx.callback(resolve, reject);
+			msg.token = this.lctx.callback(resolve, reject);
 			this.lctx.send(msg);
 		});
 	};
