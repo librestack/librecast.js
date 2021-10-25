@@ -9,7 +9,7 @@ lc.Context = class {
 
 		this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
 		this.url += document.location.host + "/";
-
+		this.callstack = [];
 		this.onconnect = new Promise(resolve => { this.resolveconnect = resolve; });
 		this.connect();
 	};
@@ -38,6 +38,35 @@ lc.Context = class {
 		this.websocket.close();
 	};
 
+	send = (msg) => {
+		let buffer, dataview, idx;
+
+		/* TODO - callback belongs in calling class, if required
+		const cb = {};
+		cb.resolve = resolve;
+		cb.reject = reject;
+		this.callstack[token] = cb;
+		*/
+
+		buffer = new ArrayBuffer(lc.HEADER_LENGTH + msg.len * 4);
+		dataview = new DataView(buffer);
+		idx = convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+		dataview.setUint8(0, msg.opcode);
+		dataview.setUint32(1, idx - lc.HEADER_LENGTH);
+		dataview.setUint32(5, msg.id);
+		dataview.setUint32(9, msg.id2);
+		dataview.setUint32(13, msg.token);
+		console.log("sending msg");
+		this.websocket.send(buffer);
+	};
+
+	wsMessage = (msg) => {
+		console.log("wsMessage received");
+		console.log(msg);
+		// TODO - decode message into LIBRECAST.Message()
+		// check for token & promise(callback) & trigger
+	};
+
 	wsClose = (e) => {
 		console.log("websocket close: (" + e.code + ") " + e.reason);
 		console.log("websocket.readyState: " + this.websocket.readyState);
@@ -52,6 +81,17 @@ lc.Context = class {
 
 	wsMessage = (msg) => {
 		console.log("websocket message received (type=" + msg.type +")");
+		console.log(msg);
+		if (typeof(msg) === 'object') {
+			if (msg.data instanceof ArrayBuffer) {
+				var dataview = new DataView(msg.data);
+				var opcode = dataview.getUint8(0);
+				var len = dataview.getUint32(1);
+				var id = dataview.getUint32(5);
+				var id2 = dataview.getUint32(9);
+				var token = dataview.getUint32(13);
+			}
+		}
 	}
 
 	wsOpen = (e) => {
