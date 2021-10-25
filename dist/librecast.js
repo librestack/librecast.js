@@ -48,6 +48,8 @@ lc.OP_CHANNEL_JOIN      = 0x12;
 lc.OP_CHANNEL_PART      = 0x13;
 lc.OP_CHANNEL_SEND      = 0x14;
 
+const UINT32_MAX = 4294967295;
+
 /* convert utf16 to utf8 and append to dataview
  * idx:		 starting byte in dataview to write to
  * utf16in:  utf16 input
@@ -81,7 +83,7 @@ lc.Message = class {
 	constructor(data) {
 		this.opcode = lc.OP_NOOP;
 		this.data = data;
-		this.len = data.length;
+		this.len = (this.data === undefined) ? 0 : data.length;
 		this.id = 0;
 		this.id2 = 0;
 		this.token = 0;
@@ -95,7 +97,7 @@ lc.Context = class {
 
 	constructor() {
 		console.log("Librecast context constructor");
-
+		this.token = 0;
 		this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
 		this.url += document.location.host + "/";
 		this.callstack = [];
@@ -127,19 +129,27 @@ lc.Context = class {
 		this.websocket.close();
 	};
 
-	send = (msg) => {
-		let buffer, dataview, idx;
+	token = () => {
+		if (++this.token >= UINT32_MAX) this.token = 0;
+		return this.token;
+	};
 
-		/* TODO - callback belongs in calling class, if required
+	callback = (resolve, reject) => {
+		const token = this.token;
 		const cb = {};
 		cb.resolve = resolve;
 		cb.reject = reject;
 		this.callstack[token] = cb;
-		*/
+		// FIXME - need to expire old tokens, or will create leak
+	};
 
+	send = (msg) => {
+		let buffer, dataview, idx;
 		buffer = new ArrayBuffer(lc.HEADER_LENGTH + msg.len * 4);
 		dataview = new DataView(buffer);
-		idx = convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+		if (msg.data !== undefined && msg.len > 0) {
+			idx = convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+		}
 		dataview.setUint8(0, msg.opcode);
 		dataview.setUint32(1, idx - lc.HEADER_LENGTH);
 		dataview.setUint32(5, msg.id);
@@ -147,13 +157,6 @@ lc.Context = class {
 		dataview.setUint32(13, msg.token);
 		console.log("sending msg");
 		this.websocket.send(buffer);
-	};
-
-	wsMessage = (msg) => {
-		console.log("wsMessage received");
-		console.log(msg);
-		// TODO - decode message into LIBRECAST.Message()
-		// check for token & promise(callback) & trigger
 	};
 
 	wsClose = (e) => {
@@ -170,15 +173,20 @@ lc.Context = class {
 
 	wsMessage = (msg) => {
 		console.log("websocket message received (type=" + msg.type +")");
-		console.log(msg);
-		if (typeof(msg) === 'object') {
-			if (msg.data instanceof ArrayBuffer) {
-				var dataview = new DataView(msg.data);
-				var opcode = dataview.getUint8(0);
-				var len = dataview.getUint32(1);
-				var id = dataview.getUint32(5);
-				var id2 = dataview.getUint32(9);
-				var token = dataview.getUint32(13);
+		if (typeof(msg) === 'object' && msg.data instanceof ArrayBuffer) {
+			const dataview = new DataView(msg.data);
+			const opcode = dataview.getUint8(0);
+			const len = dataview.getUint32(1);
+			const id = dataview.getUint32(5);
+			const id2 = dataview.getUint32(9);
+			const token = dataview.getUint32(13);
+			console.log("opcode: " + opcode);
+			console.log("len: " + len);
+			console.log("id: " + id);
+			console.log("id2: " + id2);
+			console.log("token: " + token);
+			if (this.callstack[token] !== undefined) {
+				this.callstack[token].resolve();
 			}
 		}
 	}
@@ -189,6 +197,20 @@ lc.Context = class {
 		this.resolveconnect();
 	};
 
+};
+lc.Socket = class {
+	constructor(lctx) {
+		console.log("Socket constructor");
+		if (lctx === undefined) throw new Error("Librecast.Context required");
+		this.lctx = lctx;
+		this.id = undefined;
+		return new Promise((resolve, reject) => {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_SOCKET_NEW;
+			this.lctx.callback(resolve, reject);
+			this.lctx.send(msg);
+		});
+	};
 };
 
 return lc;

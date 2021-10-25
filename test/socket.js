@@ -1,5 +1,5 @@
-QUnit.module('Librecast Context', function() {
-	QUnit.test("Librecast Context", function(assert) {
+QUnit.module('Librecast Socket', function() {
+	QUnit.test("Librecast Socket", function(assert) {
 		const done = assert.async(2);
 		const lctx = new LIBRECAST.Context();
 		lctx.onconnect.then( () => {
@@ -8,9 +8,11 @@ QUnit.module('Librecast Context', function() {
 			done();
 		})
 		.then( () => {
-			const msg = new LIBRECAST.Message('hi there');
-			lctx.send(msg);
-			done();
+			const sock = new LIBRECAST.Socket(lctx);
+			sock.then( () => {
+				assert.ok(sock, "new LIBRECAST.Socket");
+				done();
+			});
 		});
 	});
 });

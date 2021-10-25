@@ -1,8 +1,9 @@
-CLASSES := context.js message.js
+CLASSES := context.js message.js socket.js
 
 ../dist/librecast.js: head.js $(CLASSES) foot.js
 	cat head.js > $@
 	cat util.js >> $@
 	cat message.js >> $@
 	cat context.js >> $@
+	cat socket.js >> $@
 	cat foot.js >> $@
