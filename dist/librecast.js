@@ -172,6 +172,7 @@ lc.Context = class {
 		const cb = {};
 		cb.resolve = resolve;
 		cb.reject = reject;
+		cb.created = Date.now();
 		this.callstack[token] = cb;
 		console.log("callback created with token = " + token);
 		// FIXME - need to expire old tokens, or will create leak
@@ -222,6 +223,11 @@ lc.Context = class {
 			console.log("id2: " + cmsg.id2);
 			console.log("token: " + cmsg.token);
 			if (this.callstack[cmsg.token] !== undefined) {
+				this.callstack[cmsg.token].updated = Date.now()
+				cmsg.sent = this.callstack[cmsg.token].created;
+				cmsg.recv = this.callstack[cmsg.token].updated;
+				cmsg.delay = cmsg.recv - cmsg.sent;
+				console.log("message reponse took " + cmsg.delay + " ms");
 				this.callstack[cmsg.token].resolve(cmsg);
 			}
 		}
