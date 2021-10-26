@@ -67,7 +67,7 @@ lc.Context = class {
 		buffer = new ArrayBuffer(lc.HEADER_LENGTH + msg.len * 4);
 		dataview = new DataView(buffer);
 		if (msg.data !== undefined && msg.len > 0) {
-			idx = convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+			idx = util.convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
 		}
 		dataview.setUint8(0, msg.opcode);
 		dataview.setUint32(1, idx - lc.HEADER_LENGTH);
