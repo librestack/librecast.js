@@ -26,6 +26,9 @@ const LIBRECAST = (function () {
 
 var lc = {};
 
+// default op callback timeout in ms
+lc.DEFAULT_TIMEOUT = 5000;
+
 lc.WS_CONNECTING = 0;
 lc.WS_OPEN = 1;
 lc.WS_CLOSING = 2;
