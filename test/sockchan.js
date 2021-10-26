@@ -1,5 +1,6 @@
 QUnit.module('Librecast Channel + Socket Operations', function() {
 	QUnit.test("Librecast Socket", function(assert) {
+		assert.timeout(5000);
 		const done = assert.async(6);
 		const lctx = new LIBRECAST.Context();
 		const channelName = "test";
