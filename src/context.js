@@ -51,11 +51,14 @@ lc.Context = class {
 		cb.created = Date.now();
 		this.callstack[token] = cb;
 		console.log("callback created with token = " + token);
-		if (timeout === undefined) { timeout = lc.DEFAULT_TIMEOUT; };
-		cb.timeout = setTimeout( () => {
-			reject("callback timeout");
-			delete this.callstack[token];
-		}, timeout);
+		if (timeout !== lc.NO_TIMEOUT) {
+			if (timeout === undefined) { timeout = lc.DEFAULT_TIMEOUT; };
+			console.log("setting callback timer " + token);
+			cb.timeout = setTimeout( () => {
+				reject("callback (" + token + ") timeout");
+				delete this.callstack[token];
+			}, timeout);
+		}
 		return token;
 	};
 
@@ -109,6 +112,7 @@ lc.Context = class {
 				cmsg.delay = cmsg.recv - cmsg.sent;
 				console.log("message reponse took " + cmsg.delay + " ms");
 				if (this.callstack[cmsg.token].timeout !== undefined) {
+					console.log("clearing callback timer " + cmsg.token);
 					clearTimeout(this.callstack[cmsg.token].timeout);
 				}
 				this.callstack[cmsg.token].resolve(cmsg);

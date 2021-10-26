@@ -29,6 +29,8 @@ var lc = {};
 // default op callback timeout in ms
 lc.DEFAULT_TIMEOUT = 5000;
 
+lc.NO_TIMEOUT = -1;
+
 lc.WS_CONNECTING = 0;
 lc.WS_OPEN = 1;
 lc.WS_CLOSING = 2;
@@ -178,11 +180,14 @@ lc.Context = class {
 		cb.created = Date.now();
 		this.callstack[token] = cb;
 		console.log("callback created with token = " + token);
-		if (timeout === undefined) { timeout = lc.DEFAULT_TIMEOUT; };
-		cb.timeout = setTimeout( () => {
-			reject("callback timeout");
-			delete this.callstack[token];
-		}, timeout);
+		if (timeout !== lc.NO_TIMEOUT) {
+			if (timeout === undefined) { timeout = lc.DEFAULT_TIMEOUT; };
+			console.log("setting callback timer " + token);
+			cb.timeout = setTimeout( () => {
+				reject("callback (" + token + ") timeout");
+				delete this.callstack[token];
+			}, timeout);
+		}
 		return token;
 	};
 
@@ -236,6 +241,7 @@ lc.Context = class {
 				cmsg.delay = cmsg.recv - cmsg.sent;
 				console.log("message reponse took " + cmsg.delay + " ms");
 				if (this.callstack[cmsg.token].timeout !== undefined) {
+					console.log("clearing callback timer " + cmsg.token);
 					clearTimeout(this.callstack[cmsg.token].timeout);
 				}
 				this.callstack[cmsg.token].resolve(cmsg);
@@ -268,13 +274,13 @@ lc.Socket = class {
 		});
 	};
 
-	op(opcode, data) {
+	op(opcode, data, timeout) {
 		return new Promise((resolve, reject) => {
 			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 				const msg = new lc.Message(data);
 				msg.opcode = opcode;
 				msg.id = this.id;
-				msg.token = this.lctx.callback(resolve, reject);
+				msg.token = this.lctx.callback(resolve, reject, timeout);
 				this.lctx.send(msg);
 			}
 			else {
@@ -285,7 +291,7 @@ lc.Socket = class {
 
 	listen() {
 		console.log("listening on socket " + this.id);
-		return this.op(lc.OP_SOCKET_LISTEN);
+		return this.op(lc.OP_SOCKET_LISTEN, undefined, lc.NO_TIMEOUT);
 	}
 };
 lc.Channel = class {
@@ -308,14 +314,15 @@ lc.Channel = class {
 		});
 	};
 
-	op(opcode, data) {
+	op(opcode, data, timeout) {
 		return new Promise((resolve, reject) => {
 			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 				const msg = new lc.Message(data);
 				msg.opcode = opcode;
 				msg.id = this.id;
 				msg.id2 = this.id2;
-				msg.token = this.lctx.callback(resolve, reject);
+				msg.token = this.lctx.callback(resolve, reject, timeout);
+				console.log("opcode = " + opcode + ", token = " + msg.token);
 				this.lctx.send(msg);
 			}
 			else {
@@ -341,7 +348,7 @@ lc.Channel = class {
 	}
 
 	send(data) {
-		return this.op(lc.OP_CHANNEL_SEND, data);
+		return this.op(lc.OP_CHANNEL_SEND, data, lc.NO_TIMEOUT);
 	}
 
 };

@@ -15,13 +15,13 @@ lc.Socket = class {
 		});
 	};
 
-	op(opcode, data) {
+	op(opcode, data, timeout) {
 		return new Promise((resolve, reject) => {
 			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 				const msg = new lc.Message(data);
 				msg.opcode = opcode;
 				msg.id = this.id;
-				msg.token = this.lctx.callback(resolve, reject);
+				msg.token = this.lctx.callback(resolve, reject, timeout);
 				this.lctx.send(msg);
 			}
 			else {
@@ -32,6 +32,6 @@ lc.Socket = class {
 
 	listen() {
 		console.log("listening on socket " + this.id);
-		return this.op(lc.OP_SOCKET_LISTEN);
+		return this.op(lc.OP_SOCKET_LISTEN, undefined, lc.NO_TIMEOUT);
 	}
 };

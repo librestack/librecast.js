@@ -18,14 +18,15 @@ lc.Channel = class {
 		});
 	};
 
-	op(opcode, data) {
+	op(opcode, data, timeout) {
 		return new Promise((resolve, reject) => {
 			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 				const msg = new lc.Message(data);
 				msg.opcode = opcode;
 				msg.id = this.id;
 				msg.id2 = this.id2;
-				msg.token = this.lctx.callback(resolve, reject);
+				msg.token = this.lctx.callback(resolve, reject, timeout);
+				console.log("opcode = " + opcode + ", token = " + msg.token);
 				this.lctx.send(msg);
 			}
 			else {
@@ -51,7 +52,7 @@ lc.Channel = class {
 	}
 
 	send(data) {
-		return this.op(lc.OP_CHANNEL_SEND, data);
+		return this.op(lc.OP_CHANNEL_SEND, data, lc.NO_TIMEOUT);
 	}
 
 };
