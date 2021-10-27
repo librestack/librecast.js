@@ -67,14 +67,27 @@ lc.Context = class {
 		buffer = new ArrayBuffer(lc.HEADER_LENGTH + msg.len * 4);
 		dataview = new DataView(buffer);
 		if (msg.data !== undefined && msg.len > 0) {
-			idx = util.convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+			if (typeof msg.data === 'object') {
+				// copy ArrayBuffer into new buffer with space for header data
+				idx = lc.HEADER_LENGTH + msg.len;
+				const tmp = new Uint8Array(idx);
+				tmp.set(new Uint8Array(msg.data), lc.HEADER_LENGTH);
+				buffer = tmp.buffer;
+				dataview = new DataView(buffer);
+			}
+			else {
+				// string data, convert to UTF-8
+				idx = util.convertUTF16toUTF8(lc.HEADER_LENGTH, msg.data, msg.len, dataview);
+			}
 		}
+
+		// write headers
 		dataview.setUint8(0, msg.opcode);
 		dataview.setUint32(1, idx - lc.HEADER_LENGTH);
 		dataview.setUint32(5, msg.id);
 		dataview.setUint32(9, msg.id2);
 		dataview.setUint32(13, msg.token);
-		console.log("sending msg");
+
 		this.websocket.send(buffer);
 	};
 
