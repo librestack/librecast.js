@@ -289,21 +289,6 @@ lc.Socket = class {
 		});
 	};
 
-	op(opcode, data, timeout) {
-		return new Promise((resolve, reject) => {
-			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
-				const msg = new lc.Message(data);
-				msg.opcode = opcode;
-				msg.id = this.id;
-				msg.token = this.lctx.callback(resolve, reject, timeout);
-				this.lctx.send(msg);
-			}
-			else {
-				reject(LibrecastException(lc.ERR_WEBSOCKET_NOTREADY));
-			}
-		});
-	}
-
 	listen(onmessage, onerror) {
 		console.log("listening on socket " + this.id);
 		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
