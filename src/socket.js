@@ -30,8 +30,17 @@ lc.Socket = class {
 		});
 	}
 
-	listen() {
+	listen(onmessage, onerror) {
 		console.log("listening on socket " + this.id);
-		return this.op(lc.OP_SOCKET_LISTEN, undefined, lc.NO_TIMEOUT);
+		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_SOCKET_LISTEN;
+			msg.id = this.id;
+			msg.token = this.lctx.callback(onmessage, onerror, lc.NO_TIMEOUT);
+			this.lctx.send(msg);
+		}
+		else {
+			reject(LibrecastException(lc.ERR_WEBSOCKET_NOTREADY));
+		}
 	}
 };

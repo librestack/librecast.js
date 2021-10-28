@@ -239,6 +239,7 @@ lc.Context = class {
 			cmsg.id = dataview.getUint32(5);
 			cmsg.id2 = dataview.getUint32(9);
 			cmsg.token = dataview.getUint32(13);
+			cmsg.payload = msg.data.slice(lc.HEADER_LENGTH);
 			console.log("opcode: " + cmsg.opcode);
 			console.log("len: " + cmsg.len);
 			console.log("id: " + cmsg.id);
@@ -254,7 +255,9 @@ lc.Context = class {
 					console.log("clearing callback timer " + cmsg.token);
 					clearTimeout(this.callstack[cmsg.token].timeout);
 				}
-				this.callstack[cmsg.token].resolve(cmsg);
+				if (this.callstack[cmsg.token].resolve !== undefined) {
+					this.callstack[cmsg.token].resolve(cmsg);
+				}
 				delete this.callstack[cmsg.token];
 			}
 		}
@@ -299,9 +302,18 @@ lc.Socket = class {
 		});
 	}
 
-	listen() {
+	listen(onmessage, onerror) {
 		console.log("listening on socket " + this.id);
-		return this.op(lc.OP_SOCKET_LISTEN, undefined, lc.NO_TIMEOUT);
+		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
+			const msg = new lc.Message();
+			msg.opcode = lc.OP_SOCKET_LISTEN;
+			msg.id = this.id;
+			msg.token = this.lctx.callback(onmessage, onerror, lc.NO_TIMEOUT);
+			this.lctx.send(msg);
+		}
+		else {
+			reject(LibrecastException(lc.ERR_WEBSOCKET_NOTREADY));
+		}
 	}
 };
 lc.Channel = class {
