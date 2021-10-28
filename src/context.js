@@ -131,8 +131,10 @@ lc.Context = class {
 				}
 				if (this.callstack[cmsg.token].resolve !== undefined) {
 					this.callstack[cmsg.token].resolve(cmsg);
+					if (this.callstack[cmsg.token].resolve instanceof Promise) {
+						delete this.callstack[cmsg.token];
+					}
 				}
-				delete this.callstack[cmsg.token];
 			}
 		}
 	}
