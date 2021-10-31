@@ -15,13 +15,36 @@ lc.Socket = class {
 		});
 	};
 
+	op(opcode, data, timeout, callback) {
+		return new Promise((resolve, reject) => {
+			if (this.lctx.websocket.readyState == lc.WS_OPEN) {
+				const msg = new lc.Message(data);
+				msg.opcode = opcode;
+				msg.id = this.id;
+				if (callback !== false) {
+					msg.token = this.lctx.callback(resolve, reject, timeout);
+				}
+				this.lctx.send(msg);
+			}
+			else {
+				reject(LibrecastException(lc.ERR_WEBSOCKET_NOTREADY));
+			}
+		});
+	}
+
+	close() {
+		this.lctx.cancelCallback(this.token);
+		return this.op(lc.OP_SOCKET_CLOSE, undefined, undefined, false);
+	}
+
 	listen(onmessage, onerror) {
 		console.log("listening on socket " + this.id);
 		if (this.lctx.websocket.readyState == lc.WS_OPEN) {
 			const msg = new lc.Message();
 			msg.opcode = lc.OP_SOCKET_LISTEN;
 			msg.id = this.id;
-			msg.token = this.lctx.callback(onmessage, onerror, lc.NO_TIMEOUT);
+			msg.token = this.lctx.callback(onmessage, onerror, lc.NO_TIMEOUT, true);
+			this.token = msg.token;
 			this.lctx.send(msg);
 		}
 		else {

@@ -39,16 +39,19 @@ lc.Context = class {
 	};
 
 	get token() {
-		if (++this.tok >= UINT32_MAX) this.tok = 0;
-		return this.tok;
+		//if (++this.tok >= UINT32_MAX) this.tok = 0;
+		//return this.tok;
+		//
+		return Math.floor(Math.random() * UINT32_MAX);
 	};
 
-	callback(resolve, reject, timeout) {
+	callback(resolve, reject, timeout, repeat) {
 		const token = this.token;
 		const cb = {};
 		cb.resolve = resolve;
 		cb.reject = reject;
 		cb.created = Date.now();
+		cb.repeat = repeat;
 		this.callstack[token] = cb;
 		console.log("callback created with token = " + token);
 		if (timeout !== lc.NO_TIMEOUT) {
@@ -61,6 +64,15 @@ lc.Context = class {
 		}
 		return token;
 	};
+
+	cancelCallback(token) {
+		if (this.callstack[token] !== undefined) {
+			if (this.callstack[token].timeout !== undefined) {
+				clearTimeout(this.callstack[token].timeout);
+			}
+		}
+		delete this.callstack[token];
+	}
 
 	send(msg) {
 		let buffer, dataview, idx;
@@ -125,14 +137,18 @@ lc.Context = class {
 				cmsg.recv = this.callstack[cmsg.token].updated;
 				cmsg.delay = cmsg.recv - cmsg.sent;
 				console.log("message reponse took " + cmsg.delay + " ms");
+
 				if (this.callstack[cmsg.token].timeout !== undefined) {
 					console.log("clearing callback timer " + cmsg.token);
 					clearTimeout(this.callstack[cmsg.token].timeout);
+					this.callstack[cmsg.token].timeout = undefined;
 				}
 				if (this.callstack[cmsg.token].resolve !== undefined) {
 					this.callstack[cmsg.token].resolve(cmsg);
-					if (this.callstack[cmsg.token].resolve instanceof Promise) {
-						delete this.callstack[cmsg.token];
+					if (this.callstack[cmsg.token] !== undefined) {
+						if (!this.callstack[cmsg.token].repeat) {
+							this.cancelCallback(cmsg.token);
+						}
 					}
 				}
 			}

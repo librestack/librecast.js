@@ -19,6 +19,7 @@ QUnit.module('Librecast Channel + Socket Operations', function() {
 				sock.listen(msg => {
 					assert.ok(true, "message received on Socket");
 					assert.strictEqual(msg.utf8, messageText, "message verified");
+					sock.close();
 					done();
 				});
 				done();
