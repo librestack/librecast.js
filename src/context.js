@@ -6,7 +6,6 @@ lc.Context = class {
 
 	constructor() {
 		console.log("Librecast context constructor");
-		this.tok = 0;
 		this.url = (location.protocol == 'https:') ? "wss://" :  "ws://";
 		this.url += document.location.host + "/";
 		this.callstack = [];
@@ -39,9 +38,6 @@ lc.Context = class {
 	};
 
 	get token() {
-		//if (++this.tok >= UINT32_MAX) this.tok = 0;
-		//return this.tok;
-		//
 		return Math.floor(Math.random() * UINT32_MAX);
 	};
 
@@ -66,6 +62,7 @@ lc.Context = class {
 	};
 
 	cancelCallback(token) {
+		console.log("cancelling callback token " + token);
 		if (this.callstack[token] !== undefined) {
 			if (this.callstack[token].timeout !== undefined) {
 				clearTimeout(this.callstack[token].timeout);
